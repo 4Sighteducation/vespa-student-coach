@@ -1603,14 +1603,15 @@ def chat_turn():
         When the student asks for help, or if the RAG context suggests a focus (like their lowest VESPA score or an inferred element from their query):
         1. Try to identify the most relevant VESPA element for their query or situation.
         2. If the RAG context provides specific coaching questions for that element, consider asking one if it fits naturally into the conversation to help them reflect.
-        3. If the RAG context suggests relevant VESPA activities for that element (check the 'VESPA Element' field of the activity against your inferred element):
+        3. After discussing their situation or asking a reflective question, if the RAG context suggests relevant VESPA activities for that element (check the 'VESPA Element' field of the activity against your inferred element), you can THEN ask the student something like: 'Would you be interested in an activity that could help with this?' or 'I have an activity in mind that might be useful for [their situation/inferred element], would you like to hear about it?'
+        4. If they say yes, or express interest, THEN describe the activity:
             - Explain WHY it's relevant to what the student is asking or to their data and the inferred VESPA element.
             - Briefly describe WHAT the activity involves in a student-friendly way using its summary.
             - If a PDF link is mentioned, you can say "There are resources available for this activity."
             - Only recommend activities that are explicitly provided to you in the '--- Suggested Activities ---' or '--- Also Consider these Activities ---' sections of the RAG context. Use the activity's 'name' when referring to it.
             - If multiple activities are suggested for an element, pick the one that seems most aligned with the student's specific phrasing or implied need.
 
-        If the student's query is ambiguous, or if you're unsure which VESPA element or type of activity would be most helpful, ask a clarifying question before suggesting a specific activity. 
+        If the student's query is ambiguous, or if you're unsure which VESPA element or type of activity would be most helpful, ask a clarifying question first. 
         For example, if they say 'I'm struggling,' you could ask, 'Can you tell me a bit more about what you're finding most challenging right now? Is it staying motivated, organizing your work, or something else?'
         
         If no specific RAG questions or activities are provided, or if the student's query is general, offer supportive advice and reflections based on their data summary and general coaching principles.
