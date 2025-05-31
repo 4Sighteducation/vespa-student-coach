@@ -114,6 +114,67 @@ def get_knack_record(object_key, record_id=None, filters=None, page=1, rows_per_
         app.logger.error(f"JSON decode error for Knack response ({object_key}). Response text: {response.text if response else 'No response object'}")
     return None
 
+# --- Helper function to extract qualification details (ported from tutorapp.py) ---
+def extract_qual_details(exam_type_str, normalized_qual_type, app_logger_instance):
+    """Extracts specific details (like year, size) from an exam_type_str based on its normalized type."""
+    if not exam_type_str or not normalized_qual_type:
+        app_logger_instance.debug(f"extract_qual_details: exam_type_str ('{exam_type_str}') or normalized_qual_type ('{normalized_qual_type}') is missing.")
+        return None
+    
+    lower_exam_type = str(exam_type_str).lower()
+    details = {}
+
+    if normalized_qual_type == "IB HL":
+        details['ib_level'] = "HL"
+        return details
+    if normalized_qual_type == "IB SL":
+        details['ib_level'] = "SL"
+        return details
+
+    if "BTEC" in normalized_qual_type:
+        if "2010" in lower_exam_type: details['year'] = "2010"
+        elif "2016" in lower_exam_type: details['year'] = "2016"
+        else:
+            details['year'] = "2016" # Default BTEC year if not specified
+            app_logger_instance.info(f"BTEC year not specified in '{exam_type_str}', defaulting to {details['year']} for MEG lookup.")
+        
+        # Determine BTEC size based on normalized type
+        if normalized_qual_type == "BTEC Level 3 Extended Diploma": details['size'] = "EXTDIP"
+        elif normalized_qual_type == "BTEC Level 3 Diploma": details['size'] = "DIP"
+        elif normalized_qual_type == "BTEC Level 3 Subsidiary Diploma": details['size'] = "SUBDIP"
+        elif normalized_qual_type == "BTEC Level 3 Extended Certificate": # This is often the default "BTEC Level 3"
+            # Size for "Extended Certificate" can depend on the year for some ALPS tables
+            if details['year'] == "2010":
+                # For 2010, an "Extended Certificate" might be referred to as just "Certificate" in ALPS bands
+                details['size'] = "CERT" 
+            else: # For 2016, it's usually "EXTCERT"
+                details['size'] = "EXTCERT"
+        elif "foundation diploma" in lower_exam_type : details['size'] = "FOUNDDIP"
+        elif "90 credit diploma" in lower_exam_type or "90cr" in lower_exam_type : details['size'] = "NINETY_CR"
+        # Add other BTEC size mappings if necessary based on your ALPS band JSON keys
+        
+        if not details.get('size'):
+             app_logger_instance.warning(f"Could not determine BTEC size for MEG key from '{exam_type_str}' (Normalized: '{normalized_qual_type}'). MEG lookup might fail.")
+        return details
+
+    if "Pre-U" in normalized_qual_type:
+        if normalized_qual_type == "Pre-U Principal Subject": details['pre_u_type'] = "FULL"
+        elif normalized_qual_type == "Pre-U Short Course": details['pre_u_type'] = "SC"
+        return details
+
+    if "WJEC" in normalized_qual_type:
+        if normalized_qual_type == "WJEC Level 3 Diploma": details['wjec_size'] = "DIP"
+        elif normalized_qual_type == "WJEC Level 3 Certificate": details['wjec_size'] = "CERT"
+        else: # Default if not clearly diploma or certificate but identified as WJEC
+            details['wjec_size'] = "CERT" 
+            app_logger_instance.info(f"WJEC size not clearly diploma/certificate from '{normalized_qual_type}', defaulting to CERT for MEG lookup.")
+        return details
+    
+    # No specific details needed for A-Level, AS-Level, UAL, CACHE for this function as per tutorapp.py structure
+    # If they were needed (e.g. UAL Diploma vs ExtDip affecting MEG key), they would be added here.
+    app_logger_instance.debug(f"No specific details extracted for '{normalized_qual_type}' from '{exam_type_str}'.")
+    return None # Return None if no specific details are extracted for the given type
+
 # --- Student Data Specific Fetching Functions ---
 
 def get_student_user_details(student_object3_id):
@@ -133,29 +194,155 @@ def get_student_object10_record(student_email):
     app.logger.warning(f"No Object_10 record found for email {student_email}.")
     return None
 
-def get_student_object29_questionnaire_data(object10_id, cycle_number):
-    "Fetches Object_29 (Questionnaire) data for a given Object_10 ID and cycle."
-    if not object10_id or cycle_number is None: return None
-    filters = [
-        {'field': 'field_792', 'operator': 'is', 'value': object10_id}, # Connection to Object_10
-        {'field': 'field_863_raw', 'operator': 'is', 'value': str(cycle_number)} # Cycle number
-    ]
-    response = get_knack_record("object_29", filters=filters)
-    if response and response.get('records'):
-        return response['records'][0] # Assuming one Object_29 per student per cycle
-    app.logger.warning(f"No Object_29 data found for Object_10 ID {object10_id}, Cycle {cycle_number}.")
-    return None
+# --- Ported Academic Profile Functions from tutorapp.py ---
 
-def get_student_academic_profile(student_object3_id):
-    "Fetches Object_112 (Academic Profile) using student's Object_3 ID."
-    if not student_object3_id: return None
-    # field_3070 in Object_112 is the Account connection to Object_3
-    filters = [{'field': 'field_3070', 'operator': 'is', 'value': student_object3_id}]
-    response = get_knack_record("object_112", filters=filters)
-    if response and response.get('records'):
-        return response['records'][0]
-    app.logger.warning(f"No Object_112 (Academic Profile) found for student Object_3 ID {student_object3_id}.")
-    return None    
+# Helper function to parse subjects from a given academic_profile_record (ported from tutorapp.py)
+def parse_subjects_from_profile_record(academic_profile_record, app_logger_instance):
+    if not academic_profile_record:
+        app_logger_instance.error("parse_subjects_from_profile_record called with no record.")
+        return [] 
+
+    app_logger_instance.info(f"Parsing subjects for Object_112 record ID: {academic_profile_record.get('id')}. Record (first 500 chars): {str(academic_profile_record)[:500]}")
+    subjects_summary = []
+    # Subject fields are field_3080 (Sub1) to field_3094 (Sub15) in tutorapp, assuming same for student view if Obj112 is shared
+    for i in range(1, 16):
+        field_id_subject_json = f"field_30{79+i}" # field_3080 to field_3094
+        subject_json_str = academic_profile_record.get(field_id_subject_json)
+        if subject_json_str is None:
+            subject_json_str = academic_profile_record.get(f"{field_id_subject_json}_raw")
+
+        app_logger_instance.debug(f"For Obj112 ID {academic_profile_record.get('id')}, field {field_id_subject_json}: Data type: {type(subject_json_str)}, Content (brief): '{str(subject_json_str)[:100]}...'")
+        
+        if subject_json_str and isinstance(subject_json_str, str) and subject_json_str.strip().startswith('{'):
+            app_logger_instance.info(f"Attempting to parse JSON for {field_id_subject_json}: '{subject_json_str[:200]}...'")
+            try:
+                subject_data = json.loads(subject_json_str)
+                app_logger_instance.info(f"Parsed subject_data for {field_id_subject_json}: {subject_data}")
+                summary_entry = {
+                    "subject": subject_data.get("subject") or subject_data.get("subject_name") or subject_data.get("subjectName") or subject_data.get("name", "N/A"),
+                    "currentGrade": subject_data.get("currentGrade") or subject_data.get("current_grade") or subject_data.get("cg") or subject_data.get("currentgrade", "N/A"),
+                    "targetGrade": subject_data.get("targetGrade") or subject_data.get("target_grade") or subject_data.get("tg") or subject_data.get("targetgrade", "N/A"),
+                    "effortGrade": subject_data.get("effortGrade") or subject_data.get("effort_grade") or subject_data.get("eg") or subject_data.get("effortgrade", "N/A"),
+                    "examType": subject_data.get("examType") or subject_data.get("exam_type") or subject_data.get("qualificationType", "N/A")
+                }
+                if summary_entry["subject"] != "N/A" and summary_entry["subject"] is not None:
+                    subjects_summary.append(summary_entry)
+                    app_logger_instance.debug(f"Added subject: {summary_entry['subject']}")
+                else:
+                    app_logger_instance.info(f"Skipped adding subject for {field_id_subject_json} as subject name was invalid or N/A. Parsed data: {subject_data}")
+            except json.JSONDecodeError as e:
+                app_logger_instance.warning(f"JSONDecodeError for {field_id_subject_json}: {e}. Content: '{subject_json_str[:100]}...'")
+        elif subject_json_str:
+            app_logger_instance.info(f"Field {field_id_subject_json} was not empty but not a valid JSON string start: '{subject_json_str[:100]}...'")
+
+    if not subjects_summary:
+        app_logger_instance.info(f"No valid subject JSONs parsed from Object_112 record {academic_profile_record.get('id')}. Returning default message list.")
+        return [{"subject": "No academic subjects parsed from profile.", "currentGrade": "N/A", "targetGrade": "N/A", "effortGrade": "N/A", "examType": "N/A"}]
+    
+    app_logger_instance.info(f"Successfully parsed {len(subjects_summary)} subjects from Object_112 record {academic_profile_record.get('id')}.")
+    return subjects_summary
+
+# Function to fetch Academic Profile (Object_112) - (ported from tutorapp.py)
+def get_academic_profile(actual_student_obj3_id, student_name_for_fallback, app_logger_instance, student_obj10_id_log_ref="N/A"):
+    app_logger_instance.info(f"Starting academic profile fetch. Target Student's Object_3 ID: '{actual_student_obj3_id}', Fallback Name: '{student_name_for_fallback}', Original Obj10 ID for logging: {student_obj10_id_log_ref}.")
+    
+    academic_profile_record = None
+    subjects_summary = []
+
+    # Attempt 1: Fetch Object_112 using actual_student_obj3_id against Object_112.field_3064 (UserId - Short Text field)
+    if actual_student_obj3_id:
+        app_logger_instance.info(f"Attempt 1: Fetching Object_112 where field_3064 (UserId Text) is '{actual_student_obj3_id}'.")
+        filters_obj112_via_field3064 = [{'field': 'field_3064', 'operator': 'is', 'value': actual_student_obj3_id}]
+        obj112_response_attempt1 = get_knack_record("object_112", filters=filters_obj112_via_field3064)
+
+        temp_profiles_list_attempt1 = []
+        if obj112_response_attempt1 and isinstance(obj112_response_attempt1, dict) and \
+           'records' in obj112_response_attempt1 and isinstance(obj112_response_attempt1['records'], list):
+            temp_profiles_list_attempt1 = obj112_response_attempt1['records']
+            app_logger_instance.info(f"Attempt 1: Found {len(temp_profiles_list_attempt1)} candidate profiles via field_3064.")
+        else:
+            app_logger_instance.info(f"Attempt 1: Knack response for field_3064 query was not in expected format or no records. Response: {str(obj112_response_attempt1)[:200]}")
+
+        if temp_profiles_list_attempt1: 
+            if isinstance(temp_profiles_list_attempt1[0], dict):
+                academic_profile_record = temp_profiles_list_attempt1[0]
+                app_logger_instance.info(f"Attempt 1 SUCCESS: Found Object_112 record ID {academic_profile_record.get('id')} using field_3064 with Obj3 ID '{actual_student_obj3_id}'. Profile Name: {academic_profile_record.get('field_3066')}")
+                subjects_summary = parse_subjects_from_profile_record(academic_profile_record, app_logger_instance)
+                if not subjects_summary or (len(subjects_summary) == 1 and subjects_summary[0]["subject"].startswith("No academic subjects")):
+                    app_logger_instance.info(f"Object_112 ID {academic_profile_record.get('id')} (via field_3064) yielded no valid subjects. Will try other methods.")
+                    academic_profile_record = None 
+                else:
+                    app_logger_instance.info(f"Object_112 ID {academic_profile_record.get('id')} (via field_3064) has valid subjects. Using this profile.")
+                    return {"subjects": subjects_summary, "profile_record": academic_profile_record}
+            else:
+                app_logger_instance.warning(f"Attempt 1: First item in profiles_via_field3064 is not a dict: {type(temp_profiles_list_attempt1[0])}")
+        else:
+            app_logger_instance.info(f"Attempt 1 FAILED (empty list): No Object_112 profile found where field_3064 (UserId Text) is '{actual_student_obj3_id}'.")
+
+    # Attempt 2: Fetch Object_112 using actual_student_obj3_id against Object_112.field_3070 (Account Connection field)
+    if not academic_profile_record and actual_student_obj3_id: 
+        app_logger_instance.info(f"Attempt 2: Fetching Object_112 where field_3070 (Account Connection) is '{actual_student_obj3_id}'.")
+        filters_obj112_via_field3070 = [{'field': 'field_3070_raw', 'operator': 'is', 'value': actual_student_obj3_id}]
+        obj112_response_attempt2 = get_knack_record("object_112", filters=filters_obj112_via_field3070)
+        
+        temp_profiles_list_attempt2 = []
+        if not (obj112_response_attempt2 and isinstance(obj112_response_attempt2, dict) and 'records' in obj112_response_attempt2 and isinstance(obj112_response_attempt2['records'], list) and obj112_response_attempt2['records']):
+            app_logger_instance.info(f"Attempt 2 (field_3070_raw): No records or unexpected format. Trying 'field_3070' (non-raw). Response: {str(obj112_response_attempt2)[:200]}" )
+            filters_obj112_via_field3070_alt = [{'field': 'field_3070', 'operator': 'is', 'value': actual_student_obj3_id}]
+            obj112_response_attempt2 = get_knack_record("object_112", filters=filters_obj112_via_field3070_alt)
+
+        if obj112_response_attempt2 and isinstance(obj112_response_attempt2, dict) and \
+           'records' in obj112_response_attempt2 and isinstance(obj112_response_attempt2['records'], list):
+            temp_profiles_list_attempt2 = obj112_response_attempt2['records']
+            app_logger_instance.info(f"Attempt 2: Found {len(temp_profiles_list_attempt2)} candidate profiles via field_3070 logic.")
+
+        if temp_profiles_list_attempt2: 
+            if isinstance(temp_profiles_list_attempt2[0], dict):
+                academic_profile_record = temp_profiles_list_attempt2[0]
+                app_logger_instance.info(f"Attempt 2 SUCCESS: Found Object_112 record ID {academic_profile_record.get('id')} using field_3070 (Account Connection) with Obj3 ID '{actual_student_obj3_id}'. Profile Name: {academic_profile_record.get('field_3066')}")
+                subjects_summary = parse_subjects_from_profile_record(academic_profile_record, app_logger_instance)
+                if not subjects_summary or (len(subjects_summary) == 1 and subjects_summary[0]["subject"].startswith("No academic subjects")):
+                    app_logger_instance.info(f"Object_112 ID {academic_profile_record.get('id')} (via field_3070) yielded no valid subjects. Will try name fallback.")
+                    academic_profile_record = None 
+                else:
+                    app_logger_instance.info(f"Object_112 ID {academic_profile_record.get('id')} (via field_3070) has valid subjects. Using this profile.")
+                    return {"subjects": subjects_summary, "profile_record": academic_profile_record}
+            else:
+                app_logger_instance.warning(f"Attempt 2: First item in profiles_via_field3070 is not a dict: {type(temp_profiles_list_attempt2[0])}")
+        else:
+            app_logger_instance.info(f"Attempt 2 FAILED (empty list): No Object_112 profile found where field_3070 (Account Connection) is '{actual_student_obj3_id}'.")
+
+    # Attempt 3: Fallback to fetch by student name
+    if not academic_profile_record and student_name_for_fallback and student_name_for_fallback != "N/A":
+        app_logger_instance.info(f"Attempt 3: Fallback search for Object_112 by student name ('{student_name_for_fallback}') via field_3066.")
+        filters_object112_name = [{'field': 'field_3066', 'operator': 'is', 'value': student_name_for_fallback}]
+        obj112_response_attempt3 = get_knack_record("object_112", filters=filters_object112_name)
+        
+        temp_profiles_list_attempt3 = []
+        if obj112_response_attempt3 and isinstance(obj112_response_attempt3, dict) and \
+           'records' in obj112_response_attempt3 and isinstance(obj112_response_attempt3['records'], list):
+            temp_profiles_list_attempt3 = obj112_response_attempt3['records']
+            app_logger_instance.info(f"Attempt 3: Found {len(temp_profiles_list_attempt3)} candidate profiles via name fallback.")
+
+        if temp_profiles_list_attempt3: 
+            if isinstance(temp_profiles_list_attempt3[0], dict):
+                academic_profile_record = temp_profiles_list_attempt3[0]
+                app_logger_instance.info(f"Attempt 3 SUCCESS: Found Object_112 record ID {academic_profile_record.get('id')} via NAME fallback ('{student_name_for_fallback}'). Profile Name: {academic_profile_record.get('field_3066')}")
+                subjects_summary = parse_subjects_from_profile_record(academic_profile_record, app_logger_instance)
+                if not subjects_summary or (len(subjects_summary) == 1 and subjects_summary[0]["subject"].startswith("No academic subjects")):
+                    app_logger_instance.info(f"Object_112 ID {academic_profile_record.get('id')} (via name fallback) yielded no valid subjects.")
+                    # Fall through to default return
+                else:
+                    app_logger_instance.info(f"Object_112 ID {academic_profile_record.get('id')} (via name fallback) has valid subjects. Using this profile.")
+                    return {"subjects": subjects_summary, "profile_record": academic_profile_record}
+            else:
+                app_logger_instance.warning(f"Attempt 3: First item in homepage_profiles_name_search is not a dict: {type(temp_profiles_list_attempt3[0])}")
+        else:
+            app_logger_instance.warning(f"Attempt 3 FAILED (empty list): Fallback search: No Object_112 found for student name: '{student_name_for_fallback}'.")
+    
+    app_logger_instance.warning(f"All attempts to fetch Object_112 failed (Student's Obj3 ID: '{actual_student_obj3_id}', Fallback name: '{student_name_for_fallback}').")
+    default_subjects = [{"subject": "Academic profile not found by any method.", "currentGrade": "N/A", "targetGrade": "N/A", "effortGrade": "N/A", "examType": "N/A"}]
+    return {"subjects": default_subjects, "profile_record": None}
 
 # --- Data Processing Helper (Simplified for now) ---
 def get_score_profile_text(score_value):
@@ -222,7 +409,7 @@ def get_school_vespa_averages(school_id):
 
     app.logger.info(f"Calculating school VESPA averages for school_id: {school_id}")
     
-    # Use the correct filter from tutor app - field_133 is the school connection
+    # Use the correct filter from tutor app.py - field_133 is the school connection
     filters_primary = [{'field': 'field_133', 'operator': 'is', 'value': school_id}]
     app.logger.info(f"Attempting to fetch all records for object_10 with primary filter: {filters_primary}")
     
@@ -346,7 +533,7 @@ def get_points(grade, qualification_type):
     if not grade or grade == "N/A": # Removed check for grade_points_mapping_kb here, will check inside
         app.logger.warning(f"get_points: Invalid input - grade: {grade}, qual_type: {qualification_type}")
         return 0
-
+    
     grade_cleaned = str(grade).strip().upper()
     normalized_qual = normalize_qualification_type(qualification_type)
     # app.logger.debug(f"get_points: Looking for grade '{grade_cleaned}' in qual '{normalized_qual}'")
@@ -389,7 +576,8 @@ def get_points(grade, qualification_type):
         return int(points)
     else:
         # app.logger.warning(f"get_points: No points found for grade '{grade_cleaned}' (original: '{grade}') in qualification '{normalized_qual}'. Available grades in map: {list(qual_specific_map.keys()) if qual_specific_map else 'N/A'}. Returning 0 points.")
-        return 0
+        pass # Added pass to satisfy indentation for the else block
+    return 0
 
 def get_meg_for_prior_attainment(prior_attainment_score, qualification_type, percentile=75):
     """Get MEG based on prior attainment score and qualification type."""
@@ -402,7 +590,7 @@ def get_meg_for_prior_attainment(prior_attainment_score, qualification_type, per
     except (ValueError, TypeError):
         app.logger.warning(f"get_meg_for_prior_attainment: Could not convert prior_attainment_score '{prior_attainment_score}' to float.")
         return "N/A", 0
-
+    
     normalized_qual = normalize_qualification_type(qualification_type)
     
     benchmark_table_data = None
@@ -502,95 +690,262 @@ alps_bands_aLevel_60_kb = load_json_file('alpsBands_aLevel_60.json')
 alps_bands_aLevel_90_kb = load_json_file('alpsBands_aLevel_90.json')
 alps_bands_aLevel_100_kb = load_json_file('alpsBands_aLevel_100.json')
 
-# --- LLM Integration for Student Insights ---
-def generate_student_insights_with_llm(student_data):
-    """Generate personalized insights for students using OpenAI."""
+# --- LLM Integration for Student Insights (adapted from tutorapp.py) ---
+def generate_student_insights_with_llm(student_data_dict, app_logger_instance):
+    """Generate personalized insights for students using OpenAI, adapted for student-facing content."""
     if not OPENAI_API_KEY:
         app.logger.warning("OpenAI API key not set. Returning placeholder insights.")
-        return None
-    
+        # Return a structure consistent with what the frontend might expect, but with error messages
+        return {
+            "student_overview_summary": f"AI insights for {student_data_dict.get('student_name', 'you')} are currently unavailable (AI not configured).",
+            "chart_comparative_insights": "Insights unavailable (AI not configured).",
+            "questionnaire_interpretation_and_reflection_summary": "Questionnaire interpretation unavailable (AI not configured).",
+            "academic_benchmark_analysis": "Academic benchmark analysis unavailable (AI not configured).",
+            "suggested_student_goals": ["Goal suggestions unavailable (AI not configured)."]
+        }
+
     try:
-        openai.api_key = OPENAI_API_KEY
+        openai.api_key = OPENAI_API_KEY # Ensure openai object is used if you aliased it, e.g. client.api_key
+        app_logger_instance.info(f"Attempting to generate LLM insights for student: {student_data_dict.get('student_name', 'N/A')}")
+
+        student_name = student_data_dict.get('student_name', 'Student')
+        student_level = student_data_dict.get('student_level', 'N/A') 
+        current_cycle = student_data_dict.get('current_cycle', 'N/A')
+        school_averages = student_data_dict.get('school_vespa_averages') 
+        vespa_profile_for_rag = student_data_dict.get('vespa_profile', {}) 
+        all_scored_questionnaire_statements = student_data_dict.get('all_scored_questionnaire_statements', [])
+
+        prompt_parts = []
+        prompt_parts.append(f"You are My VESPA AI Coach. I am '{student_name}'. This is my data:")
+        prompt_parts.append(f"Current Cycle: {current_cycle}.")
+
+        prompt_parts.append("\n--- My Current VESPA Profile (Vision, Effort, Systems, Practice, Attitude) ---")
+        if student_data_dict.get('vespa_profile'):
+            for element, details in student_data_dict['vespa_profile'].items():
+                if element == "Overall": continue
+                prompt_parts.append(f"- {element}: My score is {details.get('score_1_to_10', 'N/A')}/10, which is considered '{details.get('score_profile_text', 'N/A')}'.")
+
+        if school_averages:
+            prompt_parts.append("\n--- School's Average VESPA Scores (For Comparison) ---")
+            for element, avg_score in school_averages.items():
+                prompt_parts.append(f"- {element} (School Avg): {avg_score}/10")
         
-        # Build context for the LLM
-        context = f"""
-You are an AI coach helping a student understand their VESPA profile and academic performance. 
-Generate encouraging, constructive insights tailored for the student themselves (not their tutor).
+        prompt_parts.append("\n--- My Academic Profile (First 3 Subjects with My Standard Expected Grade) ---")
+        if student_data_dict.get('academic_profile_summary'):
+            profile_data = student_data_dict['academic_profile_summary']
+            valid_subjects_shown = 0
+            if isinstance(profile_data, list) and profile_data and \
+               not (profile_data[0].get('subject','').startswith("Academic profile not found")) and \
+               not (profile_data[0].get('subject','').startswith("No academic subjects parsed")):
+                for subject_info in profile_data[:3]:
+                    if subject_info.get('subject') and subject_info.get('subject') != "N/A":
+                        meg_text = f", My Standard Expected Grade (MEG): {subject_info.get('standard_meg', 'N/A')}" if subject_info.get('standard_meg') else ""
+                        prompt_parts.append(f"- Subject: {subject_info.get('subject')}, My Current Grade: {subject_info.get('currentGrade', 'N/A')}, My Target: {subject_info.get('targetGrade', 'N/A')}{meg_text}")
+                        valid_subjects_shown += 1
+                if valid_subjects_shown == 0:
+                    prompt_parts.append("  It looks like my detailed subject information isn't available right now.")        
+            else:
+                prompt_parts.append("  My detailed academic profile summary isn't available at the moment.")
+        
+        if student_data_dict.get('academic_megs'):
+            meg_data = student_data_dict['academic_megs']
+            prompt_parts.append("\n--- My Academic Benchmarks (Based on My Prior Attainment) ---")
+            prompt_parts.append(f"  My GCSE Prior Attainment Score: {meg_data.get('prior_attainment_score', 'N/A')}")
+            if meg_data.get('aLevel_meg_grade_75th') and meg_data.get('aLevel_meg_grade_75th') != "N/A":
+                 prompt_parts.append(f"  For A-Levels, students with similar prior scores typically achieve around a grade '{meg_data.get('aLevel_meg_grade_75th')}' (this is the standard MEG or top 25% benchmark).")
 
-Student: {student_data.get('student_name', 'Student')}
-Current Cycle: {student_data.get('current_cycle', 0)}
+        prompt_parts.append("\n--- My Reflections & Goals (Current Cycle) ---")
+        reflections_goals_found_student = False
+        current_rrc_text_student = "Not specified"
+        current_goal_text_student = "Not specified"
+        if student_data_dict.get('student_reflections_and_goals'):
+            reflections = student_data_dict['student_reflections_and_goals']
+            current_rrc_key_student = f"rrc{current_cycle}_comment"
+            current_goal_key_student = f"goal{current_cycle}"
+            rrc_val = reflections.get(current_rrc_key_student)
+            goal_val = reflections.get(current_goal_key_student)
 
-VESPA Profile:
-{json.dumps(student_data.get('vespa_profile', {}), indent=2)}
+            if rrc_val and rrc_val != "Not specified":
+                current_rrc_text_student = str(rrc_val)[:300].replace('\n', ' ')
+                prompt_parts.append(f"- My Current Reflection (RRC{current_cycle}): {current_rrc_text_student}...")
+                reflections_goals_found_student = True
+            if goal_val and goal_val != "Not specified":
+                current_goal_text_student = str(goal_val)[:300].replace('\n', ' ')
+                prompt_parts.append(f"- My Current Goal (Goal {current_cycle}): {current_goal_text_student}...")
+                reflections_goals_found_student = True
+        if not reflections_goals_found_student:
+            prompt_parts.append("  I haven't specified any reflections or goals for the current cycle, or they are not available.")
 
-Academic Summary:
-{json.dumps(student_data.get('academic_profile_summary', []), indent=2)}
+        prompt_parts.append("\n--- My Key Questionnaire Insights (My Top & Bottom Scoring Statements) ---")
+        obj29_highlights = student_data_dict.get("object29_question_highlights")
+        if obj29_highlights:
+            if obj29_highlights.get("top_3") and obj29_highlights["top_3"]:
+                prompt_parts.append("  Statements I Most Agreed With (1-5 scale, 5=Strongly Agree):")
+                for q_data in obj29_highlights["top_3"]:
+                    prompt_parts.append(f"    - Score {q_data.get('score', 'N/A')}/5 ({q_data.get('category', 'N/A')}): \"{q_data.get('text', 'N/A')}\"")
+            if obj29_highlights.get("bottom_3") and obj29_highlights["bottom_3"]:
+                prompt_parts.append("  Statements I Least Agreed With (Areas to think about):")
+                for q_data in obj29_highlights["bottom_3"]:
+                    prompt_parts.append(f"    - Score {q_data['score']}/5 ({q_data['category']}): \"{q_data['text']}\"")
+        else:
+            prompt_parts.append("  My top/bottom questionnaire statement highlights are not available.")
 
-Student Reflections:
-{json.dumps(student_data.get('student_reflections_and_goals', {}), indent=2)}
+        # Overall Questionnaire Statement Response Distribution (Student view)
+        prompt_parts.append("\n--- My Overall Questionnaire Statement Response Distribution ---")
+        if all_scored_questionnaire_statements and isinstance(all_scored_questionnaire_statements, list):
+            response_counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+            for q_data in all_scored_questionnaire_statements:
+                score = q_data.get("score")
+                if score in response_counts: response_counts[score] += 1
+            prompt_parts.append(f"  - Statements I rated '1' (e.g., Strongly Disagree): {response_counts[1]}")
+            prompt_parts.append(f"  - Statements I rated '2': {response_counts[2]}")
+            prompt_parts.append(f"  - Statements I rated '3': {response_counts[3]}")
+            prompt_parts.append(f"  - Statements I rated '4': {response_counts[4]}")
+            prompt_parts.append(f"  - Statements I rated '5' (e.g., Strongly Agree): {response_counts[5]}")
+        else:
+            prompt_parts.append("  My detailed questionnaire response distribution data is not available.")
 
-Questionnaire Highlights:
-Top 3 responses: {json.dumps(student_data.get('object29_question_highlights', {}).get('top_3', []), indent=2)}
-Bottom 3 responses: {json.dumps(student_data.get('object29_question_highlights', {}).get('bottom_3', []), indent=2)}
-"""
+        # --- TASKS FOR THE AI (Student View) ---
+        prompt_parts.append("\n\n--- Coach, please help me with these things: ---")
+        prompt_parts.append("Based ONLY on my data provided above, please provide the following insights FOR ME ('{student_name}').")
+        prompt_parts.append("Your tone should be encouraging, supportive, and help me understand myself better. Give me practical, actionable advice.")
+        prompt_parts.append("Please format your entire response as a single JSON object with the following EXACT keys: \"student_overview_summary\", \"chart_comparative_insights\", \"questionnaire_interpretation_and_reflection_summary\", \"academic_benchmark_analysis\", \"suggested_student_goals\", \"academic_quote\", \"academic_performance_ai_summary\".")
+        prompt_parts.append("Ensure all string values within the JSON are properly escaped.")
+        
+        # --- RAG Elements for student prompt (Simplified for now, can be expanded) ---
+        # This section is less about the tutor's KB and more about general advice based on lowest VESPA or similar
+        lowest_vespa_element_student = None
+        lowest_score_student = 11 
+        if vespa_profile_for_rag:
+            for element, details in vespa_profile_for_rag.items():
+                if element == "Overall": continue
+                try:
+                    score = float(details.get('score_1_to_10', 10))
+                    if score < lowest_score_student:
+                        lowest_score_student = score
+                        lowest_vespa_element_student = element
+                except (ValueError, TypeError): pass
 
-        # Create the prompt
-        prompt = f"""{context}
+        if lowest_vespa_element_student:
+            prompt_parts.append("\n\n--- Some Ideas to Consider ---")
+            prompt_parts.append(f"My lowest VESPA score seems to be in '{lowest_vespa_element_student}'. Can you give me some general tips or reflective questions for this area, and perhaps suggest a simple, actionable goal related to it? You can use the general reflective statements from your knowledge base for inspiration.")
+            # We don't directly inject KB content into student prompt like we do for tutor, 
+            # but we ask the LLM to use its general knowledge inspired by such KBs.
 
-Based on this data, provide the following insights for the student:
+        # --- Knowledge Base Excerpts (Student View - less direct, more for LLM's internal inspiration) ---
+        # We won't show the student the raw KB excerpts like we did for the tutor.
+        # Instead, the prompt will guide the LLM to use this type of knowledge implicitly.
+        # Example: If coaching_kb and REFLECTIVE_STATEMENTS_DATA are globally available in this backend scope:
+        if coaching_kb:
+            prompt_parts.append("\n(For the AI: You have access to a coaching questions knowledge base. Use it to help formulate your advice and goal suggestions.)")
+        if REFLECTIVE_STATEMENTS_DATA:
+            prompt_parts.append("(For the AI: You have access to a list of reflective statements. Use these as inspiration for suggesting goals or discussion points for me.)")
 
-1. **Student Overview Summary** (2-3 sentences): A personalized, encouraging summary highlighting their strengths and areas for growth.
+        # --- REQUIRED OUTPUT STRUCTURE (JSON Object - Student View) ---
+        prompt_parts.append("\n\n--- REQUIRED OUTPUT STRUCTURE (JSON Object) ---")
+        prompt_parts.append("Please provide your response as a single, valid JSON object. Example:")
+        prompt_parts.append("'''") # Start of code block marker for prompt
+        prompt_parts.append("{")
+        prompt_parts.append("  \"student_overview_summary\": \"A concise 2-3 sentence AI Student Snapshot for me, '{student_name}', highlighting 1-2 of my key strengths and 1-2 primary areas for development, rooted in VESPA principles. Max 100-120 words. Speak directly to me (e.g., 'Your data shows...', 'You could focus on...').\",")
+        prompt_parts.append("  \"chart_comparative_insights\": \"A short paragraph (max 80 words) helping me understand my VESPA scores compared to the school averages (if provided). What could these differences or similarities mean for me? Use 'you' and 'your'.\",")
+        prompt_parts.append("  \"questionnaire_interpretation_and_reflection_summary\": \"A concise summary (approx. 100-150 words) interpreting my overall questionnaire responses (e.g., my tendencies towards 'Strongly Disagree' or 'Strongly Agree', as indicated by the counts of 1s, 2s, etc.). Highlight any notable patterns, such as a concentration of low or high responses in specific VESPA elements (refer to my Top/Bottom scoring statements). Also, briefly compare and contrast these questionnaire insights with my own RRC/Goal comments (My RRC: '{RRC_COMMENT_PLACEHOLDER}', My Goal: '{GOAL_COMMENT_PLACEHOLDER}'), noting any consistencies or discrepancies that could be valuable for me to reflect on. Use 'you' and 'your'.\",")
+        prompt_parts.append("  \"academic_benchmark_analysis\": \"A supportive and encouraging analysis (approx. 150-180 words) of my academic performance. Start by looking at my current grades in relation to my Subject Target Grades and my Standard Expected Grades (MEGs). Explain that MEGs show what students with similar prior GCSE scores typically achieve (top 25%) and are aspirational. Explain that my Subject Target Grade (STG) is a more nuanced target that considers subject difficulty. Emphasize that comparing my current grades, MEGs, and STGs should help me think about my progress, strengths, and potential next steps. The goal is to use this information to identify areas for support or challenge, always considering my broader context. Use 'you' and 'your'.\",")
+        prompt_parts.append("  \"suggested_student_goals\": [\"Based on the analysis, and inspired by general reflective statements, suggest 2-3 S.M.A.R.T. goals FOR ME, reframed to my context. Make them actionable and specific.\", \"Goal 2...\"],")
+        prompt_parts.append("  \"academic_quote\": \"A short, inspirational or funny quote suitable for a student. e.g., 'The expert in anything was once a beginner.' or 'Why fall in love when you can fall asleep?'\",")
+        prompt_parts.append("  \"academic_performance_ai_summary\": \"A kind, encouraging, and professional AI summary (like a helpful teacher, approx. 200-250 words) analyzing my academic profile. Discuss my subject benchmarks in relation to my MEGs. If I'm not meeting MEGs, be gentle and positive, focusing on growth and understanding. Highlight strengths and areas for development based on my subject performance. The tone should be positive and empowering, even when pointing out challenges. Reference the MEG explainer text that I will see, which describes MEGs as aspirational and STGs as more personalized. Use 'you' and 'your'.\"")
+        prompt_parts.append("}")
+        prompt_parts.append("'''") # End of code block marker
 
-2. **Chart Comparative Insights** (2-3 sentences): Help them understand what their VESPA scores mean compared to their school average (if available).
+        # Prepare cleaned versions of current_rrc_text and current_goal_text for the prompt placeholder replacement
+        cleaned_rrc_placeholder_student = current_rrc_text_student[:100].replace('\n', ' ').replace("'", "\\'").replace('"', '\\"')
+        cleaned_goal_placeholder_student = current_goal_text_student[:100].replace('\n', ' ').replace("'", "\\'").replace('"', '\\"')
+        prompt_parts.append(f"REMEMBER to replace RRC_COMMENT_PLACEHOLDER with: '{cleaned_rrc_placeholder_student}...' and GOAL_COMMENT_PLACEHOLDER with: '{cleaned_goal_placeholder_student}...' in your actual questionnaire_interpretation_and_reflection_summary output.")
 
-3. **Questionnaire Reflection** (3-4 sentences): Help them understand what their questionnaire responses reveal about their learning approach and mindset.
+        prompt_to_send = "\n".join(prompt_parts)
+        # Substitute placeholders in the final prompt string
+        prompt_to_send = prompt_to_send.replace("'{RRC_COMMENT_PLACEHOLDER}'", f"'{cleaned_rrc_placeholder_student}...'")
+        prompt_to_send = prompt_to_send.replace("'{GOAL_COMMENT_PLACEHOLDER}'", f"'{cleaned_goal_placeholder_student}...'")
 
-4. **Academic Benchmark Analysis** (2-3 sentences): Explain how their current grades compare to their potential (MEGs) in an encouraging way.
+        app_logger_instance.info(f"Generated Student LLM Prompt (first 500 chars): {prompt_to_send[:500]}")
+        app_logger_instance.info(f"Generated Student LLM Prompt (last 500 chars): {prompt_to_send[-500:]}")
+        app_logger_instance.info(f"Total Student LLM Prompt length: {len(prompt_to_send)} characters")
 
-5. **Suggested Goals** (3 specific, actionable goals): Based on their profile, what should they focus on?
+        system_message_content = (
+            f"You are My VESPA AI Coach, an AI assistant designed to help students understand their VESPA profile (Vision, Effort, Systems, Practice, Attitude) "
+            f"and academic performance. Your responses should be encouraging, supportive, and provide clear, actionable advice directly to the student using 'you' and 'your'. "
+            f"You are speaking to '{student_name}'. Help them reflect on their data and identify steps for improvement. Your output MUST be a single JSON object with specific keys."
+        )
 
-Format your response as a JSON object with these keys:
-- student_overview_summary
-- chart_comparative_insights
-- questionnaire_interpretation_and_reflection_summary
-- academic_benchmark_analysis
-- suggested_student_goals (as an array of strings)
-
-Be positive, specific, and actionable. Use "you" and "your" to speak directly to the student."""
-
-        response = openai.ChatCompletion.create(
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                # Using openai.chat.completions.create for newer OpenAI library versions
+                response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a supportive AI coach helping students improve their learning through the VESPA framework (Vision, Effort, Systems, Practice, Attitude)."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=800
-        )
-        
-        # Parse the response
-        response_text = response.choices[0].message.content
-        
-        # Try to parse as JSON
-        try:
-            insights = json.loads(response_text)
-            app.logger.info("Successfully generated LLM insights for student.")
-            return insights
-        except json.JSONDecodeError:
-            # If not valid JSON, try to extract insights manually
-            app.logger.warning("LLM response was not valid JSON. Using fallback parsing.")
-            # Simple fallback - just return the text as overview
-            return {
-                "student_overview_summary": response_text[:200] + "...",
-                "chart_comparative_insights": "Please review your VESPA scores to understand your strengths.",
-                "questionnaire_interpretation_and_reflection_summary": "Your questionnaire responses provide insights into your learning approach.",
-                "academic_benchmark_analysis": "Compare your current grades with your expected grades to identify areas for improvement.",
-                "suggested_student_goals": ["Focus on your lowest VESPA score", "Set specific study goals", "Track your progress weekly"]
-            }
-            
-    except Exception as e:
-        app.logger.error(f"Error generating LLM insights: {e}")
-        return None
+                        {"role": "system", "content": system_message_content},
+                        {"role": "user", "content": prompt_to_send}
+                    ],
+                    max_tokens=1000, # Adjusted for potentially detailed student-facing JSON
+                    temperature=0.6, # Slightly lower for more focused student advice
+                    n=1,
+                    stop=None,
+                    response_format={"type": "json_object"} # Request JSON output
+                )
+                
+                raw_response_content = response.choices[0].message.content.strip()
+                app_logger_instance.info(f"Student LLM raw response: {raw_response_content}")
+
+                parsed_llm_outputs = json.loads(raw_response_content)
+                
+                # Validate expected keys for student response
+                expected_keys_student = [
+                    "student_overview_summary", 
+                    "chart_comparative_insights", 
+                    "questionnaire_interpretation_and_reflection_summary", 
+                    "academic_benchmark_analysis", 
+                    "suggested_student_goals",
+                    "academic_quote",
+                    "academic_performance_ai_summary"
+                ]
+                # Fill missing keys with error messages if LLM doesn't provide them
+                all_keys_present = True
+                for key in expected_keys_student:
+                    if key not in parsed_llm_outputs:
+                        all_keys_present = False
+                        parsed_llm_outputs[key] = f"Error: AI response for '{key}' was not provided."
+                if not all_keys_present:
+                    app_logger_instance.warning(f"Student LLM response missing one or more expected keys. Filled with defaults. Response: {raw_response_content}")
+                
+                app_logger_instance.info(f"Student LLM generated structured data: {parsed_llm_outputs}")
+                return parsed_llm_outputs
+
+            except json.JSONDecodeError as e_json:
+                app_logger_instance.error(f"JSONDecodeError from Student LLM response (Attempt {attempt + 1}/{max_retries}): {e_json}")
+                app_logger_instance.error(f"Problematic Student LLM response content: {raw_response_content}")
+                if attempt == max_retries - 1:
+                    return {key: f"Error parsing AI response for {key} after multiple attempts." for key in expected_keys_student}
+            except Exception as e_general:
+                app_logger_instance.error(f"Error calling OpenAI API or processing response for student (Attempt {attempt + 1}/{max_retries}): {e_general}")
+                if attempt == max_retries - 1:
+                     return {key: f"Error generating insights from AI for {key}. (Details: {str(e_general)[:50]}...)" for key in expected_keys_student}
+            time.sleep(1) # Wait before retrying
+
+        # Fallback if all retries fail
+        app_logger_instance.error("Student LLM processing failed after all retries.")
+        return {key: "Critical error: AI processing failed after all retries." for key in expected_keys_student}
+
+    except Exception as e_outer:
+        app_logger_instance.error(f"Outer exception in generate_student_insights_with_llm: {e_outer}")
+        return {
+            "student_overview_summary": "An unexpected error occurred while generating AI insights.",
+            "chart_comparative_insights": "Insights unavailable due to an error.",
+            "questionnaire_interpretation_and_reflection_summary": "Questionnaire interpretation unavailable due to an error.",
+            "academic_benchmark_analysis": "Academic benchmark analysis unavailable due to an error.",
+            "suggested_student_goals": ["Goal suggestions unavailable due to an error."],
+            "academic_quote": "Quote unavailable due to an error.",
+            "academic_performance_ai_summary": "Personalized academic summary unavailable due to an error."
+        }
 
 # --- Main API Endpoint --- 
 @app.route('/api/v1/student_coaching_data', methods=['POST', 'OPTIONS'])
@@ -815,89 +1170,114 @@ def student_coaching_data():
         academic_summary = []
         academic_megs = {}
         prior_attainment_score = None
+        object112_profile_record_data = None # To store the whole Object_112 record
         
-        object112_data = get_student_academic_profile(student_object3_id)
-        if object112_data:
-            app.logger.info(f"Fetched Object_112 data for student: {object112_data.get('field_3066')} (Name in Obj112)")
+        # Call the new get_academic_profile function
+        # Pass app.logger as the app_logger_instance argument
+        academic_profile_response = get_academic_profile(student_object3_id, student_name_from_obj3, app.logger)
+        
+        if academic_profile_response:
+            academic_summary = academic_profile_response.get("subjects", [])
+            object112_profile_record_data = academic_profile_response.get("profile_record")
+
+        if object112_profile_record_data: # Check if the record itself was found
+            app.logger.info(f"Fetched Object_112 data for student: {object112_profile_record_data.get('field_3066')} (Name in Obj112)")
             
-            # Get prior attainment score (field_3272)
-            prior_attainment_raw = object112_data.get('field_3272_raw', object112_data.get('field_3272'))
-            if prior_attainment_raw:
-                try:
-                    prior_attainment_score = float(prior_attainment_raw)
-                    app.logger.info(f"Prior attainment score: {prior_attainment_score}")
-                except (ValueError, TypeError):
-                    app.logger.warning(f"Could not parse prior attainment score: {prior_attainment_raw}")
+            # Get prior attainment score (field_3272 from tutorapp.py)
+            # Ensure robust checking for _raw and direct field, and convert to float
+            prior_attainment_val = None
+            raw_pa = object112_profile_record_data.get('field_3272_raw')
+            direct_pa = object112_profile_record_data.get('field_3272')
+
+            if isinstance(raw_pa, (str, int, float)) and str(raw_pa).strip() != '':
+                try: prior_attainment_val = float(raw_pa)
+                except (ValueError, TypeError): pass
+            
+            if prior_attainment_val is None and isinstance(direct_pa, (str, int, float)) and str(direct_pa).strip() != '':
+                try: prior_attainment_val = float(direct_pa)
+                except (ValueError, TypeError): pass
+
+            if prior_attainment_val is not None:
+                prior_attainment_score = prior_attainment_val
+                app.logger.info(f"Prior attainment score: {prior_attainment_score}")
+            else:
+                app.logger.warning(f"Could not parse prior attainment score from field_3272/field_3272_raw in Object_112. Raw: '{raw_pa}', Direct: '{direct_pa}'.")
             
             # Calculate overall MEGs if prior attainment is available
             if prior_attainment_score is not None:
                 academic_megs["prior_attainment_score"] = prior_attainment_score
                 
-                # Calculate A-Level MEGs at different percentiles
-                for percentile, label in [(60, "60th"), (75, "75th"), (90, "90th"), (100, "100th")]:
+                for percentile, label_suffix in [(60, "60th"), (75, "75th"), (90, "90th"), (100, "100th")]:
                     meg_grade, meg_points = get_meg_for_prior_attainment(prior_attainment_score, "A Level", percentile)
-                    if meg_grade:
-                        academic_megs[f"aLevel_meg_grade_{label}"] = meg_grade
-                        academic_megs[f"aLevel_meg_points_{label}"] = meg_points or 0
+                    # Ensure meg_grade is not None before trying to use it, and meg_points is not None
+                    academic_megs[f"aLevel_meg_grade_{label_suffix}"] = meg_grade if meg_grade is not None else "N/A"
+                    academic_megs[f"aLevel_meg_points_{label_suffix}"] = meg_points if meg_points is not None else 0
             
-            # Process each subject
-            for i in range(1, 16): # Sub1 to Sub15
-                subject_json_str = object112_data.get(f"field_30{79+i}") # e.g. field_3080
-                if subject_json_str and isinstance(subject_json_str, str) and subject_json_str.strip().startswith('{'):
-                    try:
-                        s_data = json.loads(subject_json_str)
-                        subject_name = s_data.get('subject', f'Subject {i}')
-                        exam_type = s_data.get('examType', 'A Level')
+            # The academic_summary list should now be populated by parse_subjects_from_profile_record 
+            # which is called inside the new get_academic_profile. We then need to iterate it here to add points and MEGs.
+            # The old logic for iterating field_3080 etc. is now inside parse_subjects_from_profile_record.
+            # We now need to process the `academic_summary` list that came from `get_academic_profile`
+            # to add points and detailed MEGs per subject.
+
+            processed_academic_summary = []
+            if isinstance(academic_summary, list):
+                for subject_entry in academic_summary:
+                    if isinstance(subject_entry, dict) and subject_entry.get("subject") and not subject_entry["subject"].startswith("Academic profile not found") and not subject_entry["subject"].startswith("No academic subjects parsed") :
+                        exam_type = subject_entry.get("examType", "A Level")
                         norm_qual = normalize_qualification_type(exam_type)
-                        current_grade = s_data.get('currentGrade', 'N/A')
+                        current_grade = subject_entry.get("currentGrade", "N/A")
                         
-                        # Calculate points for current grade
                         current_points = get_points(current_grade, norm_qual) if current_grade != 'N/A' else 0
+                        subject_entry['normalized_qualification_type'] = norm_qual
+                        subject_entry['currentGradePoints'] = current_points
                         
-                        # Get standard MEG (75th percentile for A-Level, or default)
-                        standard_meg, standard_meg_points = None, None
+                        standard_meg_grade, standard_meg_points_val = "N/A", 0
                         if prior_attainment_score is not None:
-                            standard_meg, standard_meg_points = get_meg_for_prior_attainment(prior_attainment_score, norm_qual, 75)
+                            # Get details for MEG lookup if needed (e.g. BTEC year/size)
+                            qual_details_for_meg = extract_qual_details(exam_type, norm_qual, app.logger)
+                            # The get_meg_for_prior_attainment in tutorapp also takes qual_details. We might need to adapt it or this call.
+                            # For now, assuming the student version of get_meg_for_prior_attainment primarily uses percentile for A-Level
+                            # and might need future enhancement for detailed non-Alevel MEG lookup based on qual_details.
+                            standard_meg_grade, standard_meg_points_val = get_meg_for_prior_attainment(prior_attainment_score, norm_qual, 75) # Default 75th for standard
                         
-                        subject_entry = {
-                            "subject": subject_name,
-                            "currentGrade": current_grade,
-                            "targetGrade": s_data.get('targetGrade', 'N/A'),
-                            "effortGrade": s_data.get('effortGrade', 'N/A'),
-                            "examType": exam_type,
-                            "normalized_qualification_type": norm_qual,
-                            "currentGradePoints": current_points,
-                            "standard_meg": standard_meg or 'N/A',
-                            "standardMegPoints": standard_meg_points or 0
-                        }
+                        subject_entry['standard_meg'] = standard_meg_grade if standard_meg_grade is not None else "N/A"
+                        subject_entry['standardMegPoints'] = standard_meg_points_val if standard_meg_points_val is not None else 0
                         
-                        # For A-Levels, add percentile MEGs
                         if norm_qual == "A Level" and prior_attainment_score is not None:
-                            for percentile in [60, 90, 100]:
-                                meg_grade, meg_points = get_meg_for_prior_attainment(prior_attainment_score, norm_qual, percentile)
-                                if meg_points is not None:
-                                    subject_entry[f"megPoints{percentile}"] = meg_points
-                        
-                        academic_summary.append(subject_entry)
-                        
-                    except json.JSONDecodeError:
-                        app.logger.warning(f"Could not parse subject JSON from field_30{79+i} in Object_112.")
-        else:
-            app.logger.warning(f"No Object_112 data for student {student_name_from_obj3}.")
-            academic_summary.append({"subject": "Academic data not found.", "currentGrade": "N/A"})
+                            for percentile in [60, 90, 100]: # 75th is already standard_meg
+                                meg_grade_p, meg_points_p = get_meg_for_prior_attainment(prior_attainment_score, norm_qual, percentile)
+                                if meg_points_p is not None:
+                                    subject_entry[f"megPoints{percentile}"] = meg_points_p
+                        processed_academic_summary.append(subject_entry)
+                    else: # if subject entry is not valid, still add it to maintain list structure if it was a placeholder
+                        processed_academic_summary.append(subject_entry)
+                academic_summary = processed_academic_summary # Replace with the processed list
+
+        else: # if object112_profile_record_data is None (academic profile not found by any method)
+            app.logger.warning(f"No Object_112 data for student {student_name_from_obj3}. Academic summary will be default.")
+            # academic_summary will be the default from get_academic_profile e.g. [{"subject": "Academic profile not found..."}]
+            # Ensure it's a list for consistency
+            if not isinstance(academic_summary, list) or not academic_summary: # Ensure academic_summary is the default list if record was None
+                academic_summary = [{"subject": "Academic profile not found by any method.", "currentGrade": "N/A", "targetGrade": "N/A", "effortGrade": "N/A", "examType": "N/A"}]
 
 
         # Generate LLM insights
+        # Ensure all necessary data for the LLM is included in this dictionary
         llm_data_for_insights = {
             "student_name": student_name_from_obj3,
+            "student_level": object10_data.get("field_568_raw", "N/A") if object10_data else "N/A", # Add student_level
             "current_cycle": current_cycle,
-            "vespa_profile": vespa_scores_for_profile,
-            "academic_profile_summary": academic_summary,
+            "vespa_profile": vespa_scores_for_profile, # This should be the dict with score_1_to_10 and score_profile_text
+            "school_vespa_averages": school_vespa_averages, # Add school averages
+            "academic_profile_summary": academic_summary, # List of subject dicts
+            "academic_megs": academic_megs, # Dict of overall MEGs
             "student_reflections_and_goals": student_reflections,
-            "object29_question_highlights": object29_highlights_top_bottom
+            "object29_question_highlights": object29_highlights_top_bottom, # Dict with top_3 and bottom_3 lists
+            "all_scored_questionnaire_statements": all_scored_statements # List of all scored statements for distribution calculation
         }
         
-        llm_insights = generate_student_insights_with_llm(llm_data_for_insights)
+        # Pass app.logger to the LLM function
+        llm_insights = generate_student_insights_with_llm(llm_data_for_insights, app.logger)
         
         # Use LLM insights if available, otherwise fall back to placeholders
         if not llm_insights:
@@ -933,39 +1313,264 @@ def chat_turn():
     app.logger.info(f"Received request for /api/v1/chat_turn. Method: {request.method}")
     if request.method == 'OPTIONS':
         return _build_cors_preflight_response()
+    
     if request.method == 'POST':
         data = request.get_json()
-        student_knack_id = data.get('student_knack_id', 'Unknown Student')
-        current_user_message = data.get('current_user_message', 'No message')
-        app.logger.info(f"Chat turn for student {student_knack_id}. Message: {current_user_message}")
-        
-        # Dummy AI response
-        dummy_response = {
-            "ai_response": f"Hello {student_knack_id}! You said: '{current_user_message}'. I am a placeholder AI. Full chat functionality coming soon!",
-            "suggested_activities_in_chat": [],
-            "ai_message_knack_id": "dummy_chat_id_123" # Placeholder for potential future use
-        }
-        return jsonify(dummy_response), 200
+        app.logger.info(f"Chat turn data received: {str(data)[:500]}...") # Log first 500 chars
 
-# Add other placeholder endpoints as needed by vespa-student-coach.js, e.g., for chat history
+        # Student context: student_knack_id is the student's Object_3 ID.
+        student_object3_id = data.get('student_knack_id') 
+        chat_history = data.get('chat_history', []) 
+        current_user_message = data.get('current_user_message')
+        # initial_ai_context might contain the rich data from student_coaching_data endpoint
+        initial_ai_context = data.get('initial_ai_context') 
+        context_type = data.get('context_type', 'student') # Should be 'student'
+
+        if not student_object3_id or not current_user_message:
+            app.logger.error("chat_turn: Missing student_knack_id (Object_3 ID) or current_user_message.")
+            return jsonify({"error": "Missing student ID or message"}), 400
+        
+        if not OPENAI_API_KEY:
+            app.logger.error("chat_turn: OpenAI API key not configured.")
+            # Save student message even if AI can't respond
+            save_chat_message_to_knack(student_object3_id, "Student", current_user_message, is_student_chat=True)
+            return jsonify({"ai_response": "I am currently unable to respond (AI not configured). Your message has been logged."}), 200
+
+        # Save student's message to Knack
+        user_message_saved_id = save_chat_message_to_knack(student_object3_id, "Student", current_user_message, is_student_chat=True)
+        if not user_message_saved_id:
+            app.logger.error(f"chat_turn: Failed to save student's message to Knack for student Object_3 ID {student_object3_id}.")
+            # Proceed with AI response anyway, but log the failure.
+
+        student_name_for_chat = "there" # Default
+        if initial_ai_context and initial_ai_context.get('student_name'):
+            student_name_for_chat = initial_ai_context['student_name'].split(' ')[0] # Use first name
+        
+        # --- LLM Prompt Construction for Student Chat ---
+        messages_for_llm = [
+            {"role": "system", "content": f"""You are 'My VESPA AI Coach', a friendly and supportive AI assistant for students.
+            You are chatting with {student_name_for_chat}. Your goal is to help them understand their VESPA profile (Vision, Effort, Systems, Practice, Attitude), academic data, and questionnaire responses.
+            Use encouraging language. Be clear and concise.
+            If the student asks about a specific VESPA element or a challenge, try to provide actionable advice or suggest a relevant VESPA activity if one is provided in the context.
+            When suggesting an activity:
+            - Explain WHY it's relevant to what the student is asking or to their data.
+            - Briefly describe WHAT the activity involves in a student-friendly way.
+            - If a PDF link is mentioned for an activity in your context, you can say "There are resources to help you with this activity."
+            - Only recommend activities that are explicitly provided to you in the '--- Available VESPA Activities ---' section of the RAG context. Do not invent activities. Use the activity's 'name' when referring to it.
+            
+            Keep your responses focused on the student's query and their data.
+            Remember to be positive and empowering!"""
+            }
+        ]
+
+        # --- RAG Context Building ---
+        rag_context_parts = []
+        suggested_activities_for_response = [] # To send back to frontend
+
+        if initial_ai_context:
+            rag_context_parts.append("--- About Me (Student's Data Summary) ---")
+            if initial_ai_context.get('student_overview_summary'):
+                rag_context_parts.append(f"My Overall AI Snapshot: {initial_ai_context['student_overview_summary']}")
+            if initial_ai_context.get('vespa_profile'):
+                rag_context_parts.append("My VESPA Scores:")
+                for el, data_el in initial_ai_context['vespa_profile'].items():
+                    if el != "Overall": # Overall is usually a summary score
+                         rag_context_parts.append(f" - {el}: {data_el.get('score_1_to_10', 'N/A')}/10 ({data_el.get('score_profile_text', 'N/A')})")
+            if initial_ai_context.get('suggested_student_goals'):
+                 rag_context_parts.append(f"Some goals suggested for me earlier: {'; '.join(initial_ai_context['suggested_student_goals'])}")
+
+
+        # Simple keyword extraction from student message for RAG
+        # (Can be made more sophisticated later)
+        if current_user_message:
+            common_words = {"is", "a", "the", "and", "to", "of", "it", "in", "for", "on", "with", "as", "an", "at", "by", "my", "i", "me", "what", "how", "help", "can", "you"}
+            cleaned_msg_for_kw = current_user_message.lower()
+            for char_to_replace in ['?', '.', ',', '\'', '"', '!']:
+                cleaned_msg_for_kw = cleaned_msg_for_kw.replace(char_to_replace, '')
+            keywords = [word for word in cleaned_msg_for_kw.split() if word not in common_words and len(word) > 2]
+            
+            app.logger.info(f"Student chat RAG: Extracted keywords: {keywords} from message: '{current_user_message}'")
+
+            # RAG for VESPA Activities
+            if VESPA_ACTIVITIES_DATA and keywords: # VESPA_ACTIVITIES_DATA should be loaded globally
+                found_activities_text_for_prompt = []
+                processed_activity_ids_student_chat = set()
+                
+                # Simple match: activity name, summary, or VESPA element contains a keyword
+                for activity in VESPA_ACTIVITIES_DATA:
+                    activity_text_to_search = (
+                        str(activity.get('name', '')).lower() +
+                        str(activity.get('short_summary', '')).lower() +
+                        str(activity.get('vespa_element', '')).lower() +
+                        str(activity.get('keywords', [])).lower() # Include keywords from KB if present
+                    )
+                    activity_level = activity.get('level', '').lower() # handbook or level 2 / level 3
+                    # Student level from initial_ai_context.get('student_level') can be 'Level 2' or 'Level 3'
+
+                    # Basic keyword match for now, can add level filtering later
+                    if any(kw in activity_text_to_search for kw in keywords):
+                        if activity.get('id') not in processed_activity_ids_student_chat and len(suggested_activities_for_response) < 2: # Limit to 2 suggestions
+                            activity_data_for_llm = {
+                                "id": activity.get('id'),
+                                "name": activity.get('name'),
+                                "short_summary": activity.get('short_summary'),
+                                "pdf_link": activity.get('pdf_link'),
+                                "vespa_element": activity.get('vespa_element'),
+                                "level": activity.get('level')
+                            }
+                            suggested_activities_for_response.append(activity_data_for_llm)
+                            
+                            pdf_available_text = " (Resource PDF available)" if activity_data_for_llm['pdf_link'] and activity_data_for_llm['pdf_link'] != '#' else ""
+                            level_text = f" (Level: {activity_data_for_llm['level']})" if activity_data_for_llm['level'] else " (General)"
+                            found_activities_text_for_prompt.append(
+                                f"- Name: {activity_data_for_llm['name']}, VESPA Element: {activity_data_for_llm['vespa_element']}{level_text}{pdf_available_text}. Summary: {activity_data_for_llm['short_summary'][:100]}..."
+                            )
+                            processed_activity_ids_student_chat.add(activity_data_for_llm['id'])
+                
+                if found_activities_text_for_prompt:
+                    rag_context_parts.append("\n--- Available VESPA Activities (Consider these if relevant to my question) ---")
+                    rag_context_parts.extend(found_activities_text_for_prompt)
+                    app.logger.info(f"Student chat RAG: Found {len(found_activities_text_for_prompt)} relevant VESPA activities for LLM.")
+            
+        if rag_context_parts:
+            # Ensure the RAG context is properly formatted as a single string before inserting
+            system_rag_content = "\n".join(rag_context_parts)
+            messages_for_llm.insert(1, {"role": "system", "content": system_rag_content})
+            app.logger.info(f"Student chat: Added RAG context to LLM prompt. Length: {len(system_rag_content)}")
+
+        # Add chat history to messages_for_llm
+        for message in chat_history:
+            # Ensure role is 'user' or 'assistant'
+            role = message.get("role", "user").lower()
+            if role not in ["user", "assistant"]:
+                role = "user" if sender == "Student" else "assistant" # Fallback based on common senders
+            messages_for_llm.append({"role": role, "content": message.get("content", "")})
+        
+        # Add current student message
+        messages_for_llm.append({"role": "user", "content": current_user_message})
+
+        ai_response_text = "Sorry, I had a little trouble thinking of a response. Could you try asking in a different way?"
+        try:
+            app.logger.info(f"Student chat: Sending to LLM. Number of messages: {len(messages_for_llm)}.")
+            
+            llm_response = openai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages_for_llm,
+                max_tokens=300, 
+                temperature=0.7, # Slightly more creative for student chat
+                n=1,
+                stop=None
+            )
+            ai_response_text = llm_response.choices[0].message.content.strip()
+            app.logger.info(f"Student chat: LLM raw response: {ai_response_text}")
+
+        except Exception as e:
+            app.logger.error(f"Student chat: Error calling OpenAI API: {e}")
+            # ai_response_text remains the default error message
+
+        # Save AI's response to Knack
+        ai_message_saved_id = save_chat_message_to_knack(student_object3_id, "My AI Coach", ai_response_text, is_student_chat=True)
+        if not ai_message_saved_id:
+            app.logger.error(f"Student chat: Failed to save AI's response to Knack for student Object_3 ID {student_object3_id}.")
+
+        return jsonify({
+            "ai_response": ai_response_text, 
+            "suggested_activities_in_chat": suggested_activities_for_response, # Send activities to frontend
+            "ai_message_knack_id": ai_message_saved_id 
+        })
+
 @app.route('/api/v1/chat_history', methods=['POST', 'OPTIONS'])
 def chat_history():
     app.logger.info(f"Received request for /api/v1/chat_history. Method: {request.method}")
     if request.method == 'OPTIONS':
         return _build_cors_preflight_response()
+    
     if request.method == 'POST':
         data = request.get_json()
-        student_knack_id = data.get('student_knack_id', 'Unknown Student')
-        app.logger.info(f"Chat history request for student {student_knack_id}")
-        dummy_response = {
-            "chat_history": [
-                {"role": "assistant", "content": "Welcome to the placeholder chat history!"}
-            ],
-            "total_count": 1,
-            "liked_count": 0,
-            "summary": "This is a placeholder summary."
-        }
-        return jsonify(dummy_response), 200
+        student_object3_id = data.get('student_knack_id') # student_knack_id is Object_3 ID
+        max_messages = data.get('max_messages', 50) # Default to 50
+
+        if not student_object3_id:
+            app.logger.error("get_chat_history: Missing student_knack_id (Object_3 ID).")
+            return jsonify({"error": "Missing student_knack_id"}), 400
+
+        knack_object_key_chatlog = "object_118"
+        # We need to filter by field_3274 (Student connection to Object_3)
+        filters = [
+            {'field': 'field_3274', 'operator': 'is', 'value': student_object3_id}
+        ]
+        
+        app.logger.info(f"Fetching chat history for student Obj3 ID {student_object3_id} from {knack_object_key_chatlog} with filters: {filters}")
+        
+        # Fetch all chat records for this student, up to a reasonable limit to sort then slice
+        # Knack's API limit is 1000 per page.
+        # Let's fetch up to max_messages * 2 (or 100 if max_messages is small) to allow for sorting.
+        rows_to_fetch = max(100, max_messages * 2)
+        if rows_to_fetch > 1000: rows_to_fetch = 1000
+
+        chat_log_response = get_knack_record(
+            knack_object_key_chatlog, 
+            filters=filters, 
+            page=1, 
+            rows_per_page=rows_to_fetch 
+        )
+
+        all_student_chat_records = []
+        if chat_log_response and isinstance(chat_log_response, dict) and 'records' in chat_log_response:
+            all_student_chat_records = chat_log_response['records']
+            app.logger.info(f"Fetched initial {len(all_student_chat_records)} chat records for student {student_object3_id}.")
+        else:
+            app.logger.warning(f"No chat records found or unexpected response format for student {student_object3_id}. Response: {chat_log_response}")
+            return jsonify({"chat_history": [], "total_count": 0, "liked_count": 0, "summary": "No chat history found for you yet."}), 200
+
+        # Sort records by timestamp (field_3276) - Knack format is 'dd/mm/yyyy HH:MM:SS'
+        def get_datetime_from_knack_ts(ts_str):
+            if not ts_str: return datetime.min
+            try:
+                return datetime.strptime(ts_str, '%d/%m/%Y %H:%M:%S')
+            except ValueError:
+                app.logger.warning(f"Could not parse Knack timestamp: {ts_str}. Using fallback for sorting.")
+                return datetime.min
+
+        all_student_chat_records.sort(key=lambda r: get_datetime_from_knack_ts(r.get('field_3276')), reverse=True)
+
+        # Slice to get the actual max_messages
+        recent_chat_records = all_student_chat_records[:max_messages]
+        
+        chat_history_for_frontend = []
+        liked_count = 0 # Placeholder, 'liked' status not fully implemented in student chat UI/backend yet
+        for record in recent_chat_records:
+            # Determine role based on field_3273 (Author)
+            author = record.get('field_3273', 'Student') # Default to student if author missing
+            role_for_frontend = "assistant" if author == "My AI Coach" else "user"
+
+            chat_history_for_frontend.append({
+                "id": record.get('id'),
+                "role": role_for_frontend,
+                "content": record.get('field_3277', ""), # Message Text
+                "is_liked": record.get('field_3279') == "Yes", # Liked status from field_3279
+                "timestamp": record.get('field_3276')
+            })
+        
+        # Reverse to have chronological order for display (oldest of the recent batch first)
+        chat_history_for_frontend.reverse()
+
+        total_chat_count_for_student = len(all_student_chat_records) # Count before slicing
+
+        # Placeholder for summary, can be enhanced later
+        summary_text = f"You have {total_chat_count_for_student} messages in your chat history."
+        if initial_ai_context and initial_ai_context.get('student_overview_summary'): # Use initial context if available
+             summary_text = initial_ai_context.get('student_overview_summary')
+
+
+        app.logger.info(f"Returning {len(chat_history_for_frontend)} messages for student chat history. Total for student: {total_chat_count_for_student}.")
+        return jsonify({
+            "chat_history": chat_history_for_frontend,
+            "total_count": total_chat_count_for_student,
+            "liked_count": liked_count, # Placeholder
+            "summary": summary_text # Placeholder
+        }), 200
+
 
 # Helper function for CORS preflight responses
 def _build_cors_preflight_response():
@@ -983,6 +1588,61 @@ def _build_cors_preflight_response():
 def health_check():
     app.logger.info("Health check endpoint was hit.")
     return jsonify({"status": "Healthy", "message": "Student Coach Backend is running!"}), 200
+
+# --- Add definitions for new KBs from tutorapp.py here, after existing KB loading ---
+coaching_kb = load_json_file('coaching_questions_knowledge_base.json')
+COACHING_INSIGHTS_DATA = load_json_file('coaching_insights.json')
+VESPA_ACTIVITIES_DATA = load_json_file('vespa_activities_kb.json')
+
+# Load ALPS bands (ensure these JSON files are in your student app's knowledge_base directory)
+alps_bands_btec2010_kb = load_json_file('alpsBands_btec2010_main.json')
+alps_bands_btec2016_kb = load_json_file('alpsBands_btec2016_main.json')
+alps_bands_cache_kb = load_json_file('alpsBands_cache.json')
+alps_bands_ib_kb = load_json_file('alpsBands_ib.json')
+alps_bands_preU_kb = load_json_file('alpsBands_preU.json')
+alps_bands_ual_kb = load_json_file('alpsBands_ual.json')
+alps_bands_wjec_kb = load_json_file('alpsBands_wjec.json')
+
+# Load Reflective Statements from text file (similar to tutorapp.py)
+REFLECTIVE_STATEMENTS_DATA = []
+try:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Path should be relative to this app.py, inside knowledge_base.
+    # If '100 statements - 2023.txt' is directly in 'knowledge_base' for student app:
+    statements_file_path = os.path.join(current_dir, 'knowledge_base', '100 statements - 2023.txt')
+    statements_file_path = os.path.normpath(statements_file_path)
+    app.logger.info(f"Attempting to load 100 statements from: {statements_file_path}")
+    with open(statements_file_path, 'r', encoding='utf-8') as f:
+        REFLECTIVE_STATEMENTS_DATA = [line.strip() for line in f if line.strip()]
+    app.logger.info(f"Successfully loaded {len(REFLECTIVE_STATEMENTS_DATA)} statements.")
+except FileNotFoundError:
+    app.logger.error(f"'100 statements - 2023.txt' not found at {statements_file_path}.")
+    # Consider if this should be a critical error or if the app can run without it.
+except Exception as e:
+    app.logger.error(f"Error loading '100 statements - 2023.txt': {e}")
+
+# Log status of newly loaded KBs
+if not coaching_kb: app.logger.warning("Coaching KB (coaching_questions_knowledge_base.json) failed to load.")
+else: app.logger.info("Successfully loaded Coaching KB.")
+if not COACHING_INSIGHTS_DATA: app.logger.warning("Coaching Insights KB (coaching_insights.json) failed to load.")
+else: app.logger.info(f"Successfully loaded {len(COACHING_INSIGHTS_DATA)} records from Coaching Insights KB.")
+if not VESPA_ACTIVITIES_DATA: app.logger.warning("VESPA Activities KB (vespa_activities_kb.json) failed to load.")
+else: app.logger.info(f"Successfully loaded {len(VESPA_ACTIVITIES_DATA)} records from VESPA Activities KB.")
+if not REFLECTIVE_STATEMENTS_DATA: app.logger.warning("Reflective Statements (100_statements.txt) failed to load or is empty.")
+
+# Existing ALPS KBs checks (just to ensure we don't duplicate logs if they existed, but adding new ones)
+if not alps_bands_aLevel_60_kb: app.logger.warning("ALPS A-Level 60th percentile KB failed to load.")
+if not alps_bands_aLevel_75_kb: app.logger.warning("ALPS A-Level 75th percentile KB failed to load.") # Already loaded, but good to check
+if not alps_bands_aLevel_90_kb: app.logger.warning("ALPS A-Level 90th percentile KB failed to load.")
+if not alps_bands_aLevel_100_kb: app.logger.warning("ALPS A-Level 100th percentile KB failed to load.")
+if not alps_bands_btec2010_kb: app.logger.warning("ALPS BTEC 2010 KB failed to load.")
+if not alps_bands_btec2016_kb: app.logger.warning("ALPS BTEC 2016 KB failed to load.")
+# Add checks for cache, ib, preU, ual, wjec if desired
+
+# Ensure all required KBs for core functionality are checked critically
+if not grade_points_mapping_kb: app.logger.error("CRITICAL: Grade Points Mapping KB failed to load.")
+if not psychometric_question_details_kb: app.logger.warning("Psychometric Question Details KB failed to load.")
+if not report_text_kb: app.logger.warning("Report Text KB (Object_33) failed to load.")
 
 if __name__ == '__main__':
     # For local development. Heroku uses Procfile.
