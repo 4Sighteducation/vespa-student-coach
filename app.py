@@ -211,6 +211,35 @@ def get_student_object29_questionnaire_data(object10_id, cycle_number):
     app.logger.warning(f"No Object_29 data found for Object_10 ID {object10_id}, Cycle {cycle_number}.")
     return None
 
+# --- NEW Function to get Object_6 Student ID by email ---
+def get_object6_id_by_email(student_email, app_logger_instance):
+    """Fetches the student's Object_6 record ID using their email (field_91)."""
+    if not student_email:
+        app_logger_instance.error("get_object6_id_by_email: student_email parameter is missing.")
+        return None
+
+    if not KNACK_APP_ID or not KNACK_API_KEY: # Check for Knack credentials
+        app_logger_instance.error("get_object6_id_by_email: Knack App ID or API Key is missing.")
+        return None
+
+    filters = [{'field': 'field_91', 'operator': 'is', 'value': student_email}]
+    app_logger_instance.info(f"Attempting to fetch Object_6 record ID for email: {student_email}")
+    response = get_knack_record("object_6", filters=filters) 
+    
+    if response and response.get('records'):
+        if len(response['records']) > 1:
+            app_logger_instance.warning(f"Multiple Object_6 records found for email {student_email}. Using the ID from the first record: {response['records'][0].get('id')}")
+        object6_id = response['records'][0].get('id')
+        if object6_id:
+            app_logger_instance.info(f"Found Object_6 record ID: {object6_id} for email: {student_email}")
+            return object6_id
+        else:
+            app_logger_instance.error(f"Found Object_6 record for email {student_email} but it has no ID.")
+            return None
+    else:
+        app_logger_instance.warning(f"No Object_6 record found for email: {student_email}. Response: {str(response)[:200]}")
+        return None
+
 # --- Ported Academic Profile Functions from tutorapp.py ---
 
 # Helper function to parse subjects from a given academic_profile_record (ported from tutorapp.py)
@@ -1359,6 +1388,7 @@ def student_coaching_data():
 
         final_response = {
             "student_name": student_name_from_obj3,
+            "student_email": student_email, # Ensure student_email is added here
             "student_level": student_level_raw, # Send raw level to frontend
             "current_cycle": current_cycle,
             "vespa_profile": vespa_scores_for_profile,
@@ -1420,13 +1450,10 @@ def chat_turn():
             save_chat_message_to_knack(student_object3_id, "Student", current_user_message, is_student_chat=True)
             return jsonify({"ai_response": "I am currently unable to respond (AI not configured). Your message has been logged."}), 200
 
-        user_message_saved_id = save_chat_message_to_knack(student_object3_id, "Student", current_user_message, is_student_chat=True)
-        if not user_message_saved_id:
-            app.logger.error(f"chat_turn: Failed to save student's message to Knack for student Object_3 ID {student_object3_id}.")
-
         student_name_for_chat = "there"
         student_vespa_profile = {}
         student_educational_level_kb = "Level 3" # Default
+        student_email_for_chat_log = None
 
         if initial_ai_context:
             if initial_ai_context.get('student_name'):
@@ -1434,7 +1461,15 @@ def chat_turn():
             student_vespa_profile = initial_ai_context.get('vespa_profile', {}) 
             student_level_raw_from_context = initial_ai_context.get('student_level', "N/A") 
             student_educational_level_kb = get_student_educational_level(student_level_raw_from_context)
-            app.logger.info(f"Chat Turn: Student Name: {student_name_for_chat}, Mapped Edu Level for KB: {student_educational_level_kb}")
+            student_email_for_chat_log = initial_ai_context.get('student_email') # Get email from context
+            app.logger.info(f"Chat Turn: Student Name: {student_name_for_chat}, Mapped Edu Level for KB: {student_educational_level_kb}, Student Email from context: {student_email_for_chat_log}")
+        else:
+            app.logger.warning("chat_turn: initial_ai_context is missing. Student email for chat log will be unavailable.")
+
+        # Save student message (pass student_email_for_chat_log)
+        user_message_saved_id = save_chat_message_to_knack(student_object3_id, "Student", current_user_message, student_email=student_email_for_chat_log, is_student_chat=True)
+        if not user_message_saved_id:
+            app.logger.error(f"chat_turn: Failed to save student's message to Knack for student Object_3 ID {student_object3_id}.")
 
         # --- Enhanced RAG Context Building ---
         rag_context_parts = ["--- Context for My VESPA AI Coach ---"]
@@ -1654,7 +1689,8 @@ def chat_turn():
         except Exception as e:
             app.logger.error(f"Student chat: Error calling OpenAI API: {e}")
 
-        ai_message_saved_id = save_chat_message_to_knack(student_object3_id, "My AI Coach", ai_response_text, is_student_chat=True)
+        # Save AI message (pass student_email_for_chat_log)
+        ai_message_saved_id = save_chat_message_to_knack(student_object3_id, "My AI Coach", ai_response_text, student_email=student_email_for_chat_log, is_student_chat=True)
         if not ai_message_saved_id:
             app.logger.error(f"Student chat: Failed to save AI's response to Knack for student Object_3 ID {student_object3_id}.")
 
@@ -1831,17 +1867,27 @@ if not report_text_kb: app.logger.warning("Report Text KB (Object_33) failed to 
 
 # --- Save Chat Message to Knack (Object_118) --- # Docstring needs update
 # UPDATED to save to Object_119
-def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student_chat=False, ai_message_id_if_replying_to_tutor=None, is_liked=False):
+def save_chat_message_to_knack(student_obj3_id, author, message_text, student_email=None, is_student_chat=False, ai_message_id_if_replying_to_tutor=None, is_liked=False):
     if not KNACK_APP_ID or not KNACK_API_KEY:
         app.logger.error("Knack App ID or API Key is missing for save_chat_message_to_knack.")
         return None
     
     if not student_obj3_id:
-        app.logger.error("save_chat_message_to_knack: student_obj3_id is required.")
+        app.logger.error("save_chat_message_to_knack: student_obj3_id (for session/logging) is required.")
+        return None
+
+    if not student_email:
+        app.logger.error("save_chat_message_to_knack: student_email (for Object_6 connection) is required. Cannot save chat message.")
+        return None
+
+    # Get the Object_6 ID for the student using their email
+    student_object6_id = get_object6_id_by_email(student_email, app.logger)
+    if not student_object6_id:
+        app.logger.error(f"save_chat_message_to_knack: Could not retrieve Object_6 ID for student email {student_email}. Chat message will NOT be saved as field_3283 connection would fail.")
         return None
 
     # Object_119 is the "AIChatLog" for students
-    # field_3283: Student (Connection to Object_3)
+    # field_3283: Student (Connection to Object_6 - Student Record)
     # field_3282: Author (Short Text)
     # field_3286: Conversation Log (Paragraph Text)
     # field_1285: Message Timestamp (Date/Time - Knack handles this - CONFIRM IF STILL THIS FIELD FOR TIMESTAMP)
@@ -1852,7 +1898,7 @@ def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student
     current_timestamp_knack_format = datetime.now().strftime('%d/%m/%Y %H:%M:%S') # Changed to DD/MM/YYYY HH:MM:SS
     
     payload = {
-        "field_3283": [student_obj3_id], # Student Connection
+        "field_3283": [student_object6_id], # Student Connection to Object_6
         "field_3282": author,           # Author
         "field_3286": message_text[:10000], # Conversation Log
         "field_3287": "Yes" if is_liked else "No", # Liked
@@ -1868,7 +1914,7 @@ def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student
     }
     
     url = f"{KNACK_API_BASE_URL}/object_119/records"
-    app.logger.info(f"Saving chat message to Knack ({url}): Payload Author='{author}', StudentObj3ID='{student_obj3_id}', SessionID='{session_id}'")
+    app.logger.info(f"Saving chat message to Knack ({url}): Payload Author='{author}', StudentObj3ID='{student_obj3_id}', StudentObj6ID='{student_object6_id}', SessionID='{session_id}'")
 
     try:
         response = requests.post(url, headers=headers, json=payload)
@@ -1877,7 +1923,7 @@ def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student
         app.logger.info(f"Chat message saved successfully to Knack (object_119). Record ID: {response_data.get('id')}")
         return response_data.get('id')
     except requests.exceptions.HTTPError as e:
-        app.logger.error(f"HTTP error saving chat message to object_119: {e}. Status: {response.status_code if response else 'N/A'}. Text: {response.text if response else 'No response object'}")
+        app.logger.error(f"HTTP error saving chat message to object_119: {e}. Status: {e.response.status_code if e.response else 'N/A'}. Text: {e.response.text if e.response else 'No response object'}")
     except requests.exceptions.RequestException as e:
         app.logger.error(f"Request exception saving chat message to object_119: {e}")
     except json.JSONDecodeError:
