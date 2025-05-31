@@ -280,5 +280,517 @@
         ]
       }
     }
+  },
+  "vespaSpecificCoachingQuestionsWithActivities": {
+    "Vision": {
+      "Level 3": {
+        "High": {
+          "questions": [
+            "What skills are you learning that will benefit your future self?",
+            "Imagine you are 25 and when you wake up in the morning\u2026 what does your perfect working life look like?",
+            "What do you see as the benefits of getting a good education?"
+          ],
+          "related_activity_ids": [
+            "VI31",
+            "VI21",
+            "VI22"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "What do you want to do next? What if you don't get the grades? What other options are there?",
+            "Do you compare yourself to other people? Who would you like to be, and why?",
+            "Where do you want to be next year, in 2 years or 5 years? What will stop you getting there?"
+          ],
+          "related_activity_ids": [
+            "VI31",
+            "VI21",
+            "VI22"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "What does success look like for you? What might you want to achieve in the next year?",
+            "What would be important to you in a job? Describe a good day at work.",
+            "What things do you not want to be doing in 2 years' time?"
+          ],
+          "related_activity_ids": [
+            "VI31",
+            "VI21",
+            "VI22"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "If you could only do one subject in lots of detail, which would it be and why?",
+            "Describe a lesson you've enjoyed recently.",
+            "What obstacles do you think you may have to overcome while studying at this level?"
+          ],
+          "related_activity_ids": [
+            "VI31",
+            "VI21",
+            "VI22"
+          ]
+        }
+      },
+      "Level 2": {
+        "High": {
+          "questions": [
+            "What skills are you learning that will benefit your future self?",
+            "Imagine you are 25 and when you wake up in the morning\u2026 what does your perfect working life look like?",
+            "What do you see as the benefits of getting a good education?"
+          ],
+          "related_activity_ids": [
+            "VI31",
+            "VI21",
+            "VI22"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "What do you want to do next? What if you don't get the grades? What other options are there?",
+            "Do you compare yourself to other people? Who would you like to be, and why?",
+            "Where do you want to be next year, in 2 years or 5 years? What will stop you getting there?"
+          ],
+          "related_activity_ids": [
+            "VI31",
+            "VI21",
+            "VI22"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "What would help you decide what you want to achieve in the future?",
+            "Have you spent some quality time actively considering your options?",
+            "What is your favourite subject/which do you enjoy the most?"
+          ],
+          "related_activity_ids": [
+            "VI31",
+            "VI21",
+            "VI22"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "If you could only do one subject in lots of detail, which would it be and why?",
+            "Describe a lesson you've enjoyed recently.",
+            "What obstacles do you think you may have to overcome while studying at this level?"
+          ],
+          "related_activity_ids": [
+            "VI31",
+            "VI21",
+            "VI22"
+          ]
+        }
+      }
+    },
+    "Effort": {
+      "Level 3": {
+        "High": {
+          "questions": [
+            "1.Describe a typical hour of your study.",
+            "2.What is your best time of day for working?",
+            "3.How much work would you have to do in order to feel satisfied? How do you know you have done enough?"
+          ],
+          "related_activity_ids": [
+            "EF1",
+            "EF32",
+            "EF23"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "In an average week how many hours do you spend on hard/challenging/uncomfortable study outside of class?",
+            "What are you good at, and what did you do to get so good at it?",
+            "Where do you normally spend your study periods?"
+          ],
+          "related_activity_ids": [
+            "EF1",
+            "EF32",
+            "EF23"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "Think of a student who works harder than you. What do they do?",
+            "If you get stuck on a piece of work, what do you do to get past the blockage?",
+            "What should you be doing, that you know you're not?"
+          ],
+          "related_activity_ids": [
+            "EF1",
+            "EF32",
+            "EF23"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "1.How many hours have you studied for this week outside the classroom? How many hours do you think you should be studying?",
+            "2.Are you working now as hard as you did last year or earlier in your school career?",
+            "3.For your last homework, was your objective\u2026 to avoid doing it for as long as possible\u2026 to complete it as quickly as possible\u2026 or to get the best possible grade?"
+          ],
+          "related_activity_ids": [
+            "EF1",
+            "EF32",
+            "EF23"
+          ]
+        }
+      },
+      "Level 2": {
+        "High": {
+          "questions": [
+            "Describe a typical hour of your study.",
+            "What is your best time of day for working?",
+            "How much work would you have to do in order to feel satisfied? How do you know you have done enough?"
+          ],
+          "related_activity_ids": [
+            "EF1",
+            "EF32",
+            "EF23"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "In an average week how many hours do you spend on hard/challenging/uncomfortable study outside of class?",
+            "What are you good at, and what did you do to get so good at it?",
+            "Where do you normally spend your study periods"
+          ],
+          "related_activity_ids": [
+            "EF1",
+            "EF32",
+            "EF23"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "Think of a student who works harder than you. What do they do?",
+            "If you get stuck on a piece of work, what do you do to get past the blockage?",
+            "What should you be doing, that you know you're not?"
+          ],
+          "related_activity_ids": [
+            "EF1",
+            "EF32",
+            "EF23"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "How many hours have you studied for this week outside the classroom? How many hours do you think you should be studying?",
+            "Are you working now as hard as you did last year or earlier in your school career?",
+            "For your last homework, was your objective\u2026 to avoid doing it for as long as possible\u2026 to complete it as quickly as possible\u2026 or to get the best possible grade?"
+          ],
+          "related_activity_ids": [
+            "EF1",
+            "EF32",
+            "EF23"
+          ]
+        }
+      }
+    },
+    "Systems": {
+      "Level 3": {
+        "High": {
+          "questions": [
+            "Are you spending more time on one subject than the others? Why?",
+            "How could you create an extra hour every day to use in a productive way?",
+            "What organisational advice would you give to a new student?"
+          ],
+          "related_activity_ids": [
+            "SY2",
+            "SY26",
+            "SY6"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "What is next week looking like for you?",
+            "How do you tackle writing an extended response to a difficult question if you're given ten days to do it?",
+            "How do you follow-up classwork done during the day?"
+          ],
+          "related_activity_ids": [
+            "SY2",
+            "SY26",
+            "SY6"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "Are you comfortable meeting all deadlines? Describe a time you missed a deadline.",
+            "Do you still work in the same ways as you used to? What is good about these? What isn't working and why?",
+            "Suggest an object/thing \u2013 maybe something you could buy or borrow - that would make you more organised."
+          ],
+          "related_activity_ids": [
+            "SY2",
+            "SY26",
+            "SY6"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "Would you rather spend 1 hour working in class or 1 hr working at home? Why?",
+            "How do you know what work is currently outstanding?",
+            "If you could change one aspect about the way you work \u2013 what would it be and how would you change it?"
+          ],
+          "related_activity_ids": [
+            "SY2",
+            "SY26",
+            "SY6"
+          ]
+        }
+      },
+      "Level 2": {
+        "High": {
+          "questions": [
+            "Are you spending more time on one subject than the others? Why?",
+            "How could you create an extra hour every day to use in a productive way?",
+            "What organisational advice would you give to a new student?"
+          ],
+          "related_activity_ids": [
+            "SY2",
+            "SY26",
+            "SY6"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "What is next week looking like for you?",
+            "How do you tackle writing an extended response to a difficult question if you're given ten days to do it?",
+            "How do you follow-up classwork done during the day"
+          ],
+          "related_activity_ids": [
+            "SY2",
+            "SY26",
+            "SY6"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "Are you comfortable meeting all deadlines? Describe a time you missed a deadline.",
+            "Do you still work in the same ways as you used to? What is good about these ways? What isn't working and why?",
+            "Suggest an object/thing \u2013 maybe something you could buy or borrow - that would make you more organised."
+          ],
+          "related_activity_ids": [
+            "SY2",
+            "SY26",
+            "SY6"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "Would you rather spend 1 hour working in class or 1 hr working at home? Why?",
+            "How do you know what work is currently outstanding?",
+            "If you could change one aspect about the way you work \u2013 what would it be and how would you change it?"
+          ],
+          "related_activity_ids": [
+            "SY2",
+            "SY26",
+            "SY6"
+          ]
+        }
+      }
+    },
+    "Practice": {
+      "Level 3": {
+        "High": {
+          "questions": [
+            "What do you 'do' with the information we give you? How do you use it/transform it?",
+            "When was the last time you tested yourself? When did you last ask someone else to test you?",
+            "Is getting something wrong a disaster, is it a spur to (eventually) find the right answer, or something else?"
+          ],
+          "related_activity_ids": [
+            "PR5",
+            "PR37",
+            "PR210"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "Pick one of your subjects - which aspects of this subject do you least need to revise? Why?",
+            "How comfortable is the process of revision for you? How could you make it less comfortable?",
+            "Do you tend to focus/practice the content that you enjoy?"
+          ],
+          "related_activity_ids": [
+            "PR5",
+            "PR37",
+            "PR210"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "Choose a subject. If you had one hour, and no homework, what would you do to help your learning in it?",
+            "Do you do past paper questions? Describe the last time you tried something under timed conditions.",
+            "What's the hardest exam question you expect to face? What are you doing about it?"
+          ],
+          "related_activity_ids": [
+            "PR5",
+            "PR37",
+            "PR210"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "Is revision boring for you? Why? Explain your answer.",
+            "If you could pick one revision activity to use to prepare for an exam what would it be?",
+            "Describe a revision session you've recently done."
+          ],
+          "related_activity_ids": [
+            "PR5",
+            "PR37",
+            "PR210"
+          ]
+        }
+      },
+      "Level 2": {
+        "High": {
+          "questions": [
+            "1.What do you 'do' with the information we give you? How do you use it/transform it?",
+            "2.When was the last time you tested yourself? When did you last ask someone else to test you?",
+            "3.Is getting something wrong a disaster, is it a spur to (eventually) find the right answer, or something else?"
+          ],
+          "related_activity_ids": [
+            "PR5",
+            "PR37",
+            "PR210"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "Pick one of your subjects - which aspects of this subject do you least need to revise? Why?",
+            "How comfortable is the process of revision for you? How could you make it less comfortable?",
+            "Do you tend to focus/practice the content that you enjoy?"
+          ],
+          "related_activity_ids": [
+            "PR5",
+            "PR37",
+            "PR210"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "Choose a subject. If you had one hour, and no homework, what would you do to help your learning in it?",
+            "Do you do past paper questions? Describe the last time you tried something under timed conditions.",
+            "What's the hardest exam question you expect to face? What are you doing about it?"
+          ],
+          "related_activity_ids": [
+            "PR5",
+            "PR37",
+            "PR210"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "Is revision boring for you? Why? Explain your answer.",
+            "If you could pick one revision activity to use to prepare for an exam what would it be?",
+            "Describe a revision session you've recently done."
+          ],
+          "related_activity_ids": [
+            "PR5",
+            "PR37",
+            "PR210"
+          ]
+        }
+      }
+    },
+    "Attitude": {
+      "Level 3": {
+        "High": {
+          "questions": [
+            "How do you feel and respond when you get marked work back?",
+            "If you get a low grade, what do you do to make sure it doesn't happen again?",
+            "Describe a moment when you felt proud."
+          ],
+          "related_activity_ids": [
+            "AT33",
+            "AT24",
+            "AT4"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "When something goes wrong in your studies, what do you do?",
+            "Describe something you have persevered with in the past. How did you conquer the challenge?",
+            "Describe a time you've taken the initiative."
+          ],
+          "related_activity_ids": [
+            "AT33",
+            "AT24",
+            "AT4"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "What's the biggest mistake you have made so far? What have you learnt/how did you deal with it?",
+            "How do other people respond to disappointing grades? Can you name someone who responds differently to you? How?",
+            "What do you feel is the difference between you and a top 'A grade' student? List five if you can"
+          ],
+          "related_activity_ids": [
+            "AT33",
+            "AT24",
+            "AT4"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "What have you done since the start of the year that you are proud of?",
+            "Are you willing to contribute in class? Name a student who contributes more than you. What is their learning like?",
+            "Advise your friend if they have a grade they're unhappy with."
+          ],
+          "related_activity_ids": [
+            "AT33",
+            "AT24",
+            "AT4"
+          ]
+        }
+      },
+      "Level 2": {
+        "High": {
+          "questions": [
+            "1.How do you feel and respond when you get marked work back?",
+            "2.If you get a low grade, what do you do to make sure it doesn't happen again?",
+            "3.Describe a moment when you felt proud."
+          ],
+          "related_activity_ids": [
+            "AT33",
+            "AT24",
+            "AT4"
+          ]
+        },
+        "Medium": {
+          "questions": [
+            "When something goes wrong in your studies, what do you do?",
+            "Describe something you have persevered with in the past. How did you conquer the challenge?",
+            "Describe a time you've taken the initiative."
+          ],
+          "related_activity_ids": [
+            "AT33",
+            "AT24",
+            "AT4"
+          ]
+        },
+        "Low": {
+          "questions": [
+            "What's the biggest mistake you have made so far? What have you learnt/how did you deal with it?",
+            "How do other people respond to disappointing grades? Can you name someone who responds differently to you? How?",
+            "What do you feel is the difference between you and a top 'A grade' student? List five if you can"
+          ],
+          "related_activity_ids": [
+            "AT33",
+            "AT24",
+            "AT4"
+          ]
+        },
+        "Very Low": {
+          "questions": [
+            "1.What have you done since the start of the year that you are proud of?",
+            "2.Are you willing to contribute in class? Name a student who contributes more than you. What is their learning like?",
+            "3.Advise your friend if they have a grade they're unhappy with."
+          ],
+          "related_activity_ids": [
+            "AT33",
+            "AT24",
+            "AT4"
+          ]
+        }
+      }
+    }
   }
-} 
+}

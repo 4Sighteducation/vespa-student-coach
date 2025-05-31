@@ -824,7 +824,7 @@ def generate_student_insights_with_llm(student_data_dict, app_logger_instance):
         # --- TASKS FOR THE AI (Student View) ---
         prompt_parts.append("\n\n--- Coach, please help me with these things: ---")
         prompt_parts.append("Based ONLY on my data provided above, please provide the following insights FOR ME ('{student_name}').")
-        prompt_parts.append("Your tone should be encouraging, supportive, and help me understand myself better. Give me practical, actionable advice.")
+        prompt_parts.append("Your tone should be encouraging, supportive, and help me understand myself better. Give me practical, actionable advice. Subtly draw upon general coaching principles and insights related to mindset, goal-setting, self-reflection, and VESPA elements when formulating your responses, especially for the questionnaire analysis and overview. Frame suggestions as reflective points for me.")
         prompt_parts.append("Please format your entire response as a single JSON object with the following EXACT keys: \"student_overview_summary\", \"chart_comparative_insights\", \"questionnaire_interpretation_and_reflection_summary\", \"academic_benchmark_analysis\", \"suggested_student_goals\", \"academic_quote\", \"academic_performance_ai_summary\".")
         prompt_parts.append("Ensure all string values within the JSON are properly escaped.")
         
@@ -844,7 +844,7 @@ def generate_student_insights_with_llm(student_data_dict, app_logger_instance):
 
         if lowest_vespa_element_student:
             prompt_parts.append("\n\n--- Some Ideas to Consider ---")
-            prompt_parts.append(f"My lowest VESPA score seems to be in '{lowest_vespa_element_student}'. Can you give me some general tips or reflective questions for this area, and perhaps suggest a simple, actionable goal related to it? You can use the general reflective statements from your knowledge base for inspiration.")
+            prompt_parts.append(f"My lowest VESPA score seems to be in '{lowest_vespa_element_student}'. Can you give me some general tips or reflective questions for this area, and perhaps suggest a simple, actionable goal related to it? You can use the general reflective statements and coaching insights from your knowledge base for inspiration.")
             # We don't directly inject KB content into student prompt like we do for tutor, 
             # but we ask the LLM to use its general knowledge inspired by such KBs.
 
@@ -852,21 +852,63 @@ def generate_student_insights_with_llm(student_data_dict, app_logger_instance):
         # We won't show the student the raw KB excerpts like we did for the tutor.
         # Instead, the prompt will guide the LLM to use this type of knowledge implicitly.
         # Example: If coaching_kb and REFLECTIVE_STATEMENTS_DATA are globally available in this backend scope:
-        if coaching_kb:
-            prompt_parts.append("\n(For the AI: You have access to a coaching questions knowledge base. Use it to help formulate your advice and goal suggestions.)")
+        relevant_coaching_insights = []
+        if COACHING_INSIGHTS_DATA and isinstance(COACHING_INSIGHTS_DATA, list):
+            # Attempt to find a few relevant insights based on keywords or student's lowest VESPA.
+            # This is a simple keyword match; more advanced RAG could be used.
+            keywords_from_student_data = [student_name.lower(), lowest_vespa_element_student.lower() if lowest_vespa_element_student else ""]
+            if student_data_dict.get('student_reflections_and_goals'):
+                rrc_text_for_kw = student_data_dict['student_reflections_and_goals'].get(f"rrc{current_cycle}_comment", "").lower()
+                goal_text_for_kw = student_data_dict['student_reflections_and_goals'].get(f"goal{current_cycle}", "").lower()
+                keywords_from_student_data.extend(rrc_text_for_kw.split()[:10]) # First 10 words
+                keywords_from_student_data.extend(goal_text_for_kw.split()[:10])
+
+            # Add keywords from top/bottom questionnaire statements if available
+            if obj29_highlights:
+                for q_data in obj29_highlights.get("top_3", []) + obj29_highlights.get("bottom_3", []):
+                    keywords_from_student_data.extend(q_data.get('text', '').lower().split()[:5])
+
+
+            # Filter out very common words to make keywords more meaningful for matching insights
+            common_filter_words = {"i", "me", "my", "is", "a", "the", "and", "to", "of", "it", "in", "for", "on", "with", "as", "an", "at", "by", "you", "your", "what", "how", "help", "can", "some", "this", "that", "area", "areas", "score", "scores"}
+            meaningful_keywords = [kw for kw in keywords_from_student_data if kw not in common_filter_words and len(kw) > 3]
+
+
+            for insight in COACHING_INSIGHTS_DATA:
+                insight_text_corpus = (
+                    str(insight.get('name', '')).lower() + " " +
+                    str(insight.get('description', '')).lower() + " " +
+                    str(insight.get('implications_for_tutor', '')).lower() + " " +
+                    " ".join(insight.get('keywords', [])).lower()
+                )
+                # Check if any of the student's meaningful keywords appear in the insight's text corpus
+                if any(m_kw in insight_text_corpus for m_kw in meaningful_keywords):
+                    if len(relevant_coaching_insights) < 3: # Limit to 3 for brevity in prompt
+                        insight_summary_for_prompt = f"Insight: {insight.get('name')}. Focus: {insight.get('description')[:100]}..."
+                        relevant_coaching_insights.append(insight_summary_for_prompt)
+            
+        if relevant_coaching_insights:
+            prompt_parts.append("\n\n--- General Coaching Principles (For AI's Inspiration) ---")
+            prompt_parts.append("Remember to draw inspiration from general coaching principles. For example, here are a few themes from your knowledge base that might be relevant to consider when interpreting my data and suggesting reflections (do not quote these directly, but use the underlying ideas):")
+            for RAG_insight_summary in relevant_coaching_insights:
+                prompt_parts.append(f"- {RAG_insight_summary}")
+        
+        if coaching_kb: # This KB is 'coaching_questions_knowledge_base.json'
+            prompt_parts.append("\n(For the AI: You also have access to a coaching questions knowledge base. Use its principles to help formulate your advice and goal suggestions, aiming for reflective and empowering questions for me, '{student_name}'.)")
         if REFLECTIVE_STATEMENTS_DATA:
-            prompt_parts.append("(For the AI: You have access to a list of reflective statements. Use these as inspiration for suggesting goals or discussion points for me.)")
+            prompt_parts.append("(For the AI: You also have access to a list of general reflective statements. These can inspire the tone and nature of the S.M.A.R.T. goals you suggest for me.)")
+
 
         # --- REQUIRED OUTPUT STRUCTURE (JSON Object - Student View) ---
         prompt_parts.append("\n\n--- REQUIRED OUTPUT STRUCTURE (JSON Object) ---")
         prompt_parts.append("Please provide your response as a single, valid JSON object. Example:")
         prompt_parts.append("'''") # Start of code block marker for prompt
         prompt_parts.append("{")
-        prompt_parts.append("  \"student_overview_summary\": \"A concise 2-3 sentence AI Student Snapshot for me, '{student_name}', highlighting 1-2 of my key strengths and 1-2 primary areas for development, rooted in VESPA principles. Max 100-120 words. Speak directly to me (e.g., 'Your data shows...', 'You could focus on...').\",")
-        prompt_parts.append("  \"chart_comparative_insights\": \"A short paragraph (max 80 words) helping me understand my VESPA scores compared to the school averages (if provided). What could these differences or similarities mean for me? Use 'you' and 'your'.\",")
-        prompt_parts.append("  \"questionnaire_interpretation_and_reflection_summary\": \"A concise summary (approx. 100-150 words) interpreting my overall questionnaire responses (e.g., my tendencies towards 'Strongly Disagree' or 'Strongly Agree', as indicated by the counts of 1s, 2s, etc.). Highlight any notable patterns, such as a concentration of low or high responses in specific VESPA elements (refer to my Top/Bottom scoring statements). Also, briefly compare and contrast these questionnaire insights with my own RRC/Goal comments (My RRC: '{RRC_COMMENT_PLACEHOLDER}', My Goal: '{GOAL_COMMENT_PLACEHOLDER}'), noting any consistencies or discrepancies that could be valuable for me to reflect on. Use 'you' and 'your'.\",")
+        prompt_parts.append("  \"student_overview_summary\": \"A concise 2-3 sentence AI Student Snapshot for me, '{student_name}', highlighting 1-2 of my key strengths and 1-2 primary areas for development, rooted in VESPA principles and drawing from general coaching themes. Max 100-120 words. Speak directly to me (e.g., 'Your data shows...', 'You could focus on...').\",")
+        prompt_parts.append("  \"chart_comparative_insights\": \"A short paragraph (max 100 words) helping me understand my VESPA scores compared to the school averages (if provided). What could these differences or similarities mean for me? If a score is significantly different, suggest a brief reflective question for me based on general coaching principles related to that VESPA element (e.g., if 'Systems' is low, 'What's one small organizational change you could try?'). Use 'you' and 'your'.\",")
+        prompt_parts.append("  \"questionnaire_interpretation_and_reflection_summary\": \"A concise summary (approx. 150-200 words) interpreting my overall questionnaire responses (e.g., my tendencies towards 'Strongly Disagree' or 'Strongly Agree', as indicated by the counts of 1s, 2s, etc.). Highlight any notable patterns, such as a concentration of low or high responses in specific VESPA elements (refer to my Top/Bottom scoring statements). Subtly connect these patterns to general coaching insights about mindset, self-reflection, or goal-setting (e.g., if responses suggest a fixed mindset, gently introduce the idea of growth without being preachy). Also, briefly compare and contrast these questionnaire insights with my own RRC/Goal comments (My RRC: '{RRC_COMMENT_PLACEHOLDER}', My Goal: '{GOAL_COMMENT_PLACEHOLDER}'), noting any consistencies or discrepancies that could be valuable for me to reflect on. Use 'you' and 'your'.\",")
         prompt_parts.append("  \"academic_benchmark_analysis\": \"A supportive and encouraging analysis (approx. 150-180 words) of my academic performance. Start by looking at my current grades in relation to my Subject Target Grades and my Standard Expected Grades (MEGs). Explain that MEGs show what students with similar prior GCSE scores typically achieve (top 25%) and are aspirational. Explain that my Subject Target Grade (STG) is a more nuanced target that considers subject difficulty. Emphasize that comparing my current grades, MEGs, and STGs should help me think about my progress, strengths, and potential next steps. The goal is to use this information to identify areas for support or challenge, always considering my broader context. Use 'you' and 'your'.\",")
-        prompt_parts.append("  \"suggested_student_goals\": [\"Based on the analysis, and inspired by general reflective statements, suggest 2-3 S.M.A.R.T. goals FOR ME, reframed to my context. Make them actionable and specific.\", \"Goal 2...\"],")
+        prompt_parts.append("  \"suggested_student_goals\": [\"Based on the analysis, and inspired by general reflective statements and coaching principles (e.g., focusing on an area for development from the questionnaire or VESPA profile), suggest 2-3 S.M.A.R.T. goals FOR ME, reframed to my context. Make them actionable and specific.\", \"Goal 2...\"],")
         prompt_parts.append("  \"academic_quote\": \"A short, inspirational or funny quote suitable for a student. e.g., 'The expert in anything was once a beginner.' or 'Why fall in love when you can fall asleep?'\",")
         prompt_parts.append("  \"academic_performance_ai_summary\": \"A kind, encouraging, and professional AI summary (like a helpful teacher, approx. 200-250 words) analyzing my academic profile. Discuss my subject benchmarks in relation to my MEGs. If I'm not meeting MEGs, be gentle and positive, focusing on growth and understanding. Highlight strengths and areas for development based on my subject performance. The tone should be positive and empowering, even when pointing out challenges. Reference the MEG explainer text that I will see, which describes MEGs as aspirational and STGs as more personalized. Use 'you' and 'your'.\"")
         prompt_parts.append("}")
@@ -902,8 +944,8 @@ def generate_student_insights_with_llm(student_data_dict, app_logger_instance):
                         {"role": "system", "content": system_message_content},
                         {"role": "user", "content": prompt_to_send}
                     ],
-                    max_tokens=1000, # Adjusted for potentially detailed student-facing JSON
-                    temperature=0.6, # Slightly lower for more focused student advice
+                    max_tokens=1200, # Adjusted for potentially detailed student-facing JSON, increased slightly
+                    temperature=0.65, # Slightly higher for more nuanced and less wooden student advice
                     n=1,
                     stop=None,
                     response_format={"type": "json_object"} # Request JSON output
@@ -1645,6 +1687,7 @@ else: app.logger.info(f"Successfully loaded {len(COACHING_INSIGHTS_DATA)} record
 if not VESPA_ACTIVITIES_DATA: app.logger.warning("VESPA Activities KB (vespa_activities_kb.json) failed to load.")
 else: app.logger.info(f"Successfully loaded {len(VESPA_ACTIVITIES_DATA)} records from VESPA Activities KB.")
 if not REFLECTIVE_STATEMENTS_DATA: app.logger.warning("Reflective Statements (100_statements.txt) failed to load or is empty.")
+else: app.logger.info(f"Successfully loaded {len(REFLECTIVE_STATEMENTS_DATA)} statements from 100_statements.txt")
 
 # Existing ALPS KBs checks (just to ensure we don't duplicate logs if they existed, but adding new ones)
 if not alps_bands_aLevel_60_kb: app.logger.warning("ALPS A-Level 60th percentile KB failed to load.")

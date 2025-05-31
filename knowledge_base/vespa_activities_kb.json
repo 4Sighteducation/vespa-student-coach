@@ -16,7 +16,12 @@
       "personal development",
       "time management"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V1-20%20Questions.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V1-20%20Questions.pdf",
+    "related_activities": [
+      "VI3",
+      "EF215",
+      "PR33"
+    ]
   },
   {
     "id": "VI21",
@@ -35,7 +40,12 @@
       "effort",
       "vision"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20MotivationD.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20MotivationD.pdf",
+    "related_activities": [
+      "VI30",
+      "VI22",
+      "EF22"
+    ]
   },
   {
     "id": "EF1",
@@ -55,7 +65,12 @@
       "Grades",
       "Educational outcomes"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Proactive%20vs%20Reactive%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Proactive%20vs%20Reactive%28editable%29.pdf",
+    "related_activities": [
+      "EF224",
+      "PR210",
+      "SY211"
+    ]
   },
   {
     "id": "VI22",
@@ -74,7 +89,12 @@
       "Physical activity",
       "Power"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Personal%20Compass.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Personal%20Compass.pdf",
+    "related_activities": [
+      "EF329",
+      "AT21",
+      "AT229"
+    ]
   },
   {
     "id": "EF32",
@@ -93,7 +113,12 @@
       "Academic Performance",
       "Time Management"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E1-1-10%20Scale.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E1-1-10%20Scale.pdf",
+    "related_activities": [
+      "EF224",
+      "EF330",
+      "PR210"
+    ]
   },
   {
     "id": "SY2",
@@ -112,7 +137,12 @@
       "classroom environment",
       "timetable flexibility"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Night%20School.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Night%20School.pdf",
+    "related_activities": [
+      "SY36",
+      "PR210",
+      "SY26"
+    ]
   },
   {
     "id": "EF23",
@@ -131,19 +161,24 @@
       "structure",
       "audit"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Mision%20%26%20Medal.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Mision%20%26%20Medal.pdf",
+    "related_activities": [
+      "EF224",
+      "EF36",
+      "EF225"
+    ]
   },
   {
     "id": "AT33",
     "name": "Change Curve",
     "vespa_element": "ATTITUDE",
     "level": "3",
-    "research_basis": "The text explicitly mentions that the Change Curve model was originally developed by psychologist Elisabeth Kübler-Ross in the 1960s to explain the phases people go through during the grieving process. This indicates a research basis in psychology, specifically related to grief and coping mechanisms.\n\nTherefore, the specific research basis mentioned in the text is the work of psychologist Elisabeth Kübler-Ross on the stages of grief.",
+    "research_basis": "The text explicitly mentions that the Change Curve model was originally developed by psychologist Elisabeth K\u00fcbler-Ross in the 1960s to explain the phases people go through during the grieving process. This indicates a research basis in psychology, specifically related to grief and coping mechanisms.\n\nTherefore, the specific research basis mentioned in the text is the work of psychologist Elisabeth K\u00fcbler-Ross on the stages of grief.",
     "short_summary": "The Change Curve educational activity helps individuals understand and navigate their emotional responses to significant life changes, such as starting A level study, by identifying common stages like denial, anger, and acceptance.",
-    "long_summary": "The 'Change Curve' educational activity aims to help students understand and navigate their reactions to significant changes, particularly the transition to A level study. Based on Elisabeth Kübler-Ross's model of grief stages, the curve outlines various emotional responses such as denial, anger, anxiety, and acceptance. Students are encouraged to reflect on their own responses to A level study and identify where they are on the curve. By recognizing and accepting these feelings, students can progress through the stages and ultimately adapt to the change. The activity emphasizes that everyone experiences these emotions, and it's normal to take time to move through them. The key takeaway is to focus on the next stage and keep progressing towards acceptance and adjustment. This activity can be beneficial for students struggling with the challenges of transitioning to A level study, offering insight and a roadmap for emotional growth and adaptation.",
+    "long_summary": "The 'Change Curve' educational activity aims to help students understand and navigate their reactions to significant changes, particularly the transition to A level study. Based on Elisabeth K\u00fcbler-Ross's model of grief stages, the curve outlines various emotional responses such as denial, anger, anxiety, and acceptance. Students are encouraged to reflect on their own responses to A level study and identify where they are on the curve. By recognizing and accepting these feelings, students can progress through the stages and ultimately adapt to the change. The activity emphasizes that everyone experiences these emotions, and it's normal to take time to move through them. The key takeaway is to focus on the next stage and keep progressing towards acceptance and adjustment. This activity can be beneficial for students struggling with the challenges of transitioning to A level study, offering insight and a roadmap for emotional growth and adaptation.",
     "keywords": [
       "Change Curve",
-      "Elisabeth Kübler-Ross",
+      "Elisabeth K\u00fcbler-Ross",
       "grieving process",
       "significant change",
       "reactions",
@@ -151,7 +186,12 @@
       "anger",
       "acceptance"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A6-Change%20Curve.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A6-Change%20Curve.pdf",
+    "related_activities": [
+      "AT339",
+      "AT26",
+      "AT223"
+    ]
   },
   {
     "id": "VI3",
@@ -164,7 +204,12 @@
     "keywords": [
       "1. Vision Activity\n2. Educational worksheet\n3. Career exploration\n4. Self-reflection\n5. Goal setting\n6. Personal interests\n7. Problem-solving"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%2020%20More%20Questions%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%2020%20More%20Questions%28editable%29.pdf",
+    "related_activities": [
+      "VI31",
+      "VI219",
+      "EF240"
+    ]
   },
   {
     "id": "VI34",
@@ -177,7 +222,12 @@
     "keywords": [
       "1. Dreams\n2. Goals\n3. Vision\n4. Actions\n5. Hopes\n6. Fantasy\n7. Daydreams"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V2%20-%20Getting%20Dreams%20Done.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V2%20-%20Getting%20Dreams%20Done.pdf",
+    "related_activities": [
+      "VI20",
+      "VI27",
+      "VI30"
+    ]
   },
   {
     "id": "AT24",
@@ -197,7 +247,12 @@
       "Motivation",
       "Stanford University"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Growth%20Mindset.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Growth%20Mindset.pdf",
+    "related_activities": [
+      "AT238",
+      "AT319",
+      "AT4"
+    ]
   },
   {
     "id": "AT4",
@@ -216,7 +271,12 @@
       "attitude activity",
       "competitive mindset"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Naf%20vs%20Nach%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Naf%20vs%20Nach%28editable%29.pdf",
+    "related_activities": [
+      "AT319",
+      "AT24",
+      "VI236"
+    ]
   },
   {
     "id": "VI25",
@@ -235,7 +295,12 @@
       "journey",
       "obstacles"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Roadmap.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Roadmap.pdf",
+    "related_activities": [
+      "VI25",
+      "VI233",
+      "VI333"
+    ]
   },
   {
     "id": "AT35",
@@ -254,7 +319,12 @@
       "energy",
       "friendship group"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A7-Vampire%20Test.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A7-Vampire%20Test.pdf",
+    "related_activities": [
+      "PR33",
+      "AT39",
+      "VI233"
+    ]
   },
   {
     "id": "PR5",
@@ -274,7 +344,12 @@
       "analyze",
       "justify"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20The%20Command%20Verb%20table%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20The%20Command%20Verb%20table%28editable%29.pdf",
+    "related_activities": [
+      "PR214",
+      "PR216",
+      "PR37"
+    ]
   },
   {
     "id": "SY26",
@@ -293,7 +368,12 @@
       "goal setting",
       "reflection"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%20Weekly%20Planner.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%20Weekly%20Planner.pdf",
+    "related_activities": [
+      "SY314",
+      "SY24",
+      "PR28"
+    ]
   },
   {
     "id": "EF36",
@@ -312,7 +392,12 @@
       "trigger",
       "behavior"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E3%20-%203R%27s%20of%20Habit.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E3%20-%203R%27s%20of%20Habit.pdf",
+    "related_activities": [
+      "EF23",
+      "EF32",
+      "AT39"
+    ]
   },
   {
     "id": "SY6",
@@ -325,7 +410,12 @@
     "keywords": [
       "1. Cornell Notes\n2. Note-taking\n3. Study techniques\n4. Active learning\n5. Test results\n6. Clarification\n7. Summarization"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Cornell%20Notes%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Cornell%20Notes%28editable%29.pdf",
+    "related_activities": [
+      "PR227",
+      "PR23",
+      "PR33"
+    ]
   },
   {
     "id": "VI27",
@@ -344,7 +434,12 @@
       "time management",
       "long-term goal"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Rule%20of%203.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Rule%20of%203.pdf",
+    "related_activities": [
+      "SY318",
+      "VI324",
+      "VI236"
+    ]
   },
   {
     "id": "PR37",
@@ -363,7 +458,12 @@
       "hours",
       "independent work"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P1-Revision%20Questionnaire.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P1-Revision%20Questionnaire.pdf",
+    "related_activities": [
+      "PR214",
+      "PR216",
+      "PR28"
+    ]
   },
   {
     "id": "SY7",
@@ -382,7 +482,12 @@
       "Time management",
       "Prioritization"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Pending%2C%20Doing%2C%20Done.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Pending%2C%20Doing%2C%20Done.pdf",
+    "related_activities": [
+      "SY327",
+      "SY39",
+      "SY222"
+    ]
   },
   {
     "id": "SY38",
@@ -401,7 +506,12 @@
       "Habits",
       "Rituals"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S2-The%20Breakfast%20Club.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S2-The%20Breakfast%20Club.pdf",
+    "related_activities": [
+      "SY38",
+      "SY24",
+      "VI20"
+    ]
   },
   {
     "id": "SY28",
@@ -420,7 +530,12 @@
       "Research",
       "Goal Identification"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%20Chunking%20Steps.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%20Chunking%20Steps.pdf",
+    "related_activities": [
+      "SY318",
+      "VI27",
+      "SY237"
+    ]
   },
   {
     "id": "SY38",
@@ -439,7 +554,12 @@
       "habits and rituals",
       "productivity"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/S2-The%20Breakfast%20Club.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/S2-The%20Breakfast%20Club.pdf",
+    "related_activities": [
+      "SY38",
+      "SY24",
+      "SY237"
+    ]
   },
   {
     "id": "VI8",
@@ -458,7 +578,12 @@
       "education",
       "employment opportunities"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Sweet%20%26%20Sour%20Summers%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Sweet%20%26%20Sour%20Summers%28editable%29.pdf",
+    "related_activities": [
+      "VI15",
+      "VI34",
+      "VI37"
+    ]
   },
   {
     "id": "VI29",
@@ -477,7 +602,12 @@
       "success",
       "long-term goal"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Grit.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Grit.pdf",
+    "related_activities": [
+      "PR210",
+      "VI27",
+      "VI236"
+    ]
   },
   {
     "id": "SY39",
@@ -496,7 +626,12 @@
       "deadlines",
       "task completion"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S1-Energy%20Line.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S1-Energy%20Line.pdf",
+    "related_activities": [
+      "SY41",
+      "SY237",
+      "SY327"
+    ]
   },
   {
     "id": "EF9",
@@ -509,7 +644,12 @@
     "keywords": [
       "1. Peloton\n2. Cycling\n3. Drag\n4. Race\n5. Classroom\n6. Subjects\n7. Performance"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20The%20Peleton%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20The%20Peleton%28editable%29.pdf",
+    "related_activities": [
+      "EF32",
+      "EF225",
+      "VI218"
+    ]
   },
   {
     "id": "AT310",
@@ -528,7 +668,12 @@
       "Challenge",
       "Self-awareness"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A3-Kill%20your%20Critic.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A3-Kill%20your%20Critic.pdf",
+    "related_activities": [
+      "AT221",
+      "EF317",
+      "AT319"
+    ]
   },
   {
     "id": "PR210",
@@ -547,7 +692,12 @@
       "organizing tasks",
       "mock exams"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Building%20Independent%20Learning.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Building%20Independent%20Learning.pdf",
+    "related_activities": [
+      "EF215",
+      "EF32",
+      "VI29"
+    ]
   },
   {
     "id": "EF10",
@@ -566,7 +716,12 @@
       "external triggers",
       "internal triggers"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Indestractible%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Indestractible%28editable%29.pdf",
+    "related_activities": [
+      "PR235",
+      "EF329",
+      "EF32"
+    ]
   },
   {
     "id": "VI311",
@@ -585,7 +740,12 @@
       "future hopes",
       "self-reflection"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V3%20-%2021st%20Birthday.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V3%20-%2021st%20Birthday.pdf",
+    "related_activities": [
+      "VI315",
+      "EF240",
+      "PR33"
+    ]
   },
   {
     "id": "SY211",
@@ -604,7 +764,12 @@
       "Graham Allcott",
       "Think Productive"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%203%20Types%20of%20Attention.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%203%20Types%20of%20Attention.pdf",
+    "related_activities": [
+      "SY14",
+      "AT39",
+      "SY39"
+    ]
   },
   {
     "id": "VI11",
@@ -625,7 +790,12 @@
       "passions",
       "strengths"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Ikigai%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Ikigai%28editable%29.pdf",
+    "related_activities": [
+      "VI3",
+      "VI31",
+      "VI15"
+    ]
   },
   {
     "id": "AT212",
@@ -638,7 +808,12 @@
     "keywords": [
       "1. Network Audits\n2. Support network\n3. Seeking help\n4. Team collaboration\n5. Attention management\n6. Peer support\n7. Mentors"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Network%20Audits.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Network%20Audits.pdf",
+    "related_activities": [
+      "EF213",
+      "VI233",
+      "VI25"
+    ]
   },
   {
     "id": "EF312",
@@ -657,14 +832,19 @@
       "important tasks",
       "lead domino"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E5%20-%20Frogs%20%26%20Bannisters.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E5%20-%20Frogs%20%26%20Bannisters.pdf",
+    "related_activities": [
+      "SY327",
+      "SY335",
+      "SY222"
+    ]
   },
   {
     "id": "AT12",
     "name": "ODA",
     "vespa_element": "ATTITUDE",
     "level": "",
-    "research_basis": "The text strongly implies a research basis in problem-solving processes and strategies, as well as the use of questioning techniques to guide problem-solving. The mention of working with students to develop a problem-solving process inspired by Warren Berger’s The Book of Beautiful Questions suggests an evidence-based approach to addressing study-related problems. The emphasis on observing the problem, generating possible solutions, and testing those solutions aligns with research on effective problem-solving techniques in education and psychology.\n\nTherefore, the research basis in problem-solving processes and the",
+    "research_basis": "The text strongly implies a research basis in problem-solving processes and strategies, as well as the use of questioning techniques to guide problem-solving. The mention of working with students to develop a problem-solving process inspired by Warren Berger\u2019s The Book of Beautiful Questions suggests an evidence-based approach to addressing study-related problems. The emphasis on observing the problem, generating possible solutions, and testing those solutions aligns with research on effective problem-solving techniques in education and psychology.\n\nTherefore, the research basis in problem-solving processes and the",
     "short_summary": "The educational activity 'ODA' helps students tackle study-related problems by observing, deciding, and acting through a structured process of asking questions to understand and solve complex issues effectively.",
     "long_summary": "The educational activity 'ODA' focuses on problem-solving using the Observe, Decide, Act (O.D.A.) structure. Students are guided through a series of questions to help them analyze and address study-related problems effectively. In the 'Observe' phase, students are encouraged to view the problem from different perspectives, challenge assumptions, and gather information. The 'Decide' phase prompts students to clarify their goals, consider potential solutions, and identify key actions to take. Finally, in the 'Act' phase, students create plans based on their analysis and test potential solutions. The primary benefits for students engaging in this activity include developing critical thinking skills, enhancing problem-solving abilities, and fostering a structured approach to addressing academic challenges. This activity is useful for tutors to recommend to students struggling with complex study issues, as it provides a systematic framework for problem-solving.",
     "keywords": [
@@ -688,7 +868,12 @@
       "plans",
       "problem analysis"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20ODA%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20ODA%28editable%29.pdf",
+    "related_activities": [
+      "AT21",
+      "AT229",
+      "PR230"
+    ]
   },
   {
     "id": "EF313",
@@ -707,7 +892,12 @@
       "distractions",
       "productivity"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E4-Recognising%20your%20Blockers.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E4-Recognising%20your%20Blockers.pdf",
+    "related_activities": [
+      "EF329",
+      "VI333",
+      "EF320"
+    ]
   },
   {
     "id": "EF213",
@@ -726,7 +916,12 @@
       "Brutal Facts",
       "Problem-Solving"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Looking%20under%20Rocks.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Looking%20under%20Rocks.pdf",
+    "related_activities": [
+      "AT212",
+      "AT229",
+      "VI233"
+    ]
   },
   {
     "id": "EF13",
@@ -745,7 +940,12 @@
       "Frustration",
       "Distraction cost"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Disruption%20Cost%20and%20Deep%20Work%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Disruption%20Cost%20and%20Deep%20Work%28editable%29.pdf",
+    "related_activities": [
+      "EF224",
+      "EF215",
+      "EF10"
+    ]
   },
   {
     "id": "SY314",
@@ -764,7 +964,12 @@
       "Learning",
       "Study habits"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S3-Snack%2Cdon%27t%20Binge.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S3-Snack%2Cdon%27t%20Binge.pdf",
+    "related_activities": [
+      "SY26",
+      "PR231",
+      "SY19"
+    ]
   },
   {
     "id": "PR214",
@@ -777,7 +982,12 @@
     "keywords": [
       "1. Educational activities\n2. Revision techniques\n3. Mock exams\n4. Study habits\n5. Peer support\n6. Exam preparation\n7. Feedback analysis"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Practice%20Questionnaire.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Practice%20Questionnaire.pdf",
+    "related_activities": [
+      "PR37",
+      "PR231",
+      "PR216"
+    ]
   },
   {
     "id": "SY14",
@@ -796,7 +1006,12 @@
       "productivity",
       "self-care"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Have%20to%2COught%20to%2CWant%20to%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Have%20to%2COught%20to%2CWant%20to%28editable%29.pdf",
+    "related_activities": [
+      "SY19",
+      "SY211",
+      "SY237"
+    ]
   },
   {
     "id": "VI315",
@@ -815,7 +1030,12 @@
       "Respect",
       "Qualities"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V4%20-%20Fix%20your%20Dashboard.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V4%20-%20Fix%20your%20Dashboard.pdf",
+    "related_activities": [
+      "VI311",
+      "VI31",
+      "VI3"
+    ]
   },
   {
     "id": "EF215",
@@ -834,7 +1054,12 @@
       "Topics",
       "Activities"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%203%20How%27s%20of%20Independent%20Work.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%203%20How%27s%20of%20Independent%20Work.pdf",
+    "related_activities": [
+      "PR210",
+      "EF320",
+      "EF32"
+    ]
   },
   {
     "id": "VI15",
@@ -853,7 +1078,12 @@
       "purpose",
       "creativity"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Question%20of%20Money%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Question%20of%20Money%28editable%29.pdf",
+    "related_activities": [
+      "VI8",
+      "VI34",
+      "VI322"
+    ]
   },
   {
     "id": "PR216",
@@ -866,7 +1096,12 @@
     "keywords": [
       "1. Time to Teach\n2. Active recall\n3. Revision strategy\n4. Cal Newport\n5. Exam question\n6. Teaching techniques\n7. Test preparation"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Time%20to%20Teach.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Time%20to%20Teach.pdf",
+    "related_activities": [
+      "PR37",
+      "PR33",
+      "PR214"
+    ]
   },
   {
     "id": "PR316",
@@ -879,7 +1114,12 @@
     "keywords": [
       "1. Mistakes\n2. Learning\n3. Professor James Reason\n4. Error analysis\n5. Active mistake\n6. Slip-up\n7. Blackout"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P7-Learn%20from%20Mistakes.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P7-Learn%20from%20Mistakes.pdf",
+    "related_activities": [
+      "AT319",
+      "PR323",
+      "VI218"
+    ]
   },
   {
     "id": "AT16",
@@ -898,7 +1138,12 @@
       "Gratitude",
       "Learning"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Check%20Ahead%2C%20Check%20Back%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Check%20Ahead%2C%20Check%20Back%28editable%29.pdf",
+    "related_activities": [
+      "VI217",
+      "VI311",
+      "EF213"
+    ]
   },
   {
     "id": "VI217",
@@ -917,7 +1162,12 @@
       "comfort zone",
       "learning zone"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Personal%20Best.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Personal%20Best.pdf",
+    "related_activities": [
+      "VI324",
+      "VI20",
+      "VI22"
+    ]
   },
   {
     "id": "EF317",
@@ -936,7 +1186,12 @@
       "Psychology",
       "Mantra"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E7%20-%20Inner%20Story%20Telling.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E7%20-%20Inner%20Story%20Telling.pdf",
+    "related_activities": [
+      "AT310",
+      "AT221",
+      "EF224"
+    ]
   },
   {
     "id": "EF17",
@@ -957,7 +1212,12 @@
       "radio silence",
       "celebration."
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Questify%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Questify%28editable%29.pdf",
+    "related_activities": [
+      "SY39",
+      "EF22",
+      "SY28"
+    ]
   },
   {
     "id": "VI218",
@@ -976,7 +1236,12 @@
       "interview",
       "educational activity"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Success%20leaves%20Clues.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Success%20leaves%20Clues.pdf",
+    "related_activities": [
+      "PR316",
+      "VI25",
+      "EF32"
+    ]
   },
   {
     "id": "SY318",
@@ -995,7 +1260,12 @@
       "productivity",
       "structured approach"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S4-2-4-8%20Rule.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S4-2-4-8%20Rule.pdf",
+    "related_activities": [
+      "VI27",
+      "SY337",
+      "SY325"
+    ]
   },
   {
     "id": "PR18",
@@ -1008,7 +1278,12 @@
     "keywords": [
       "1. High utility\n2. Low utility\n3. Practice tests\n4. Spaced practice\n5. Elaborative interrogation\n6. Mnemonics\n7. Interleaved practice"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20High%20and%20Low%20Utility%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20High%20and%20Low%20Utility%28editable%29.pdf",
+    "related_activities": [
+      "PR214",
+      "PR235",
+      "PR231"
+    ]
   },
   {
     "id": "VI219",
@@ -1021,7 +1296,12 @@
     "keywords": [
       "1. Rational thinking\n2. Risk assessment\n3. Passion pursuit\n4. Uncertainty\n5. Feedback\n6. Mock exam results\n7. Success definition"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Five%20Roads.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Five%20Roads.pdf",
+    "related_activities": [
+      "EF240",
+      "VI3",
+      "VI31"
+    ]
   },
   {
     "id": "AT319",
@@ -1040,7 +1320,12 @@
       "Feedback",
       "Responsibility"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A5-Falling%20Forwards.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A5-Falling%20Forwards.pdf",
+    "related_activities": [
+      "PR316",
+      "AT4",
+      "AT24"
+    ]
   },
   {
     "id": "SY19",
@@ -1059,7 +1344,12 @@
       "task management",
       "study habits"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Catch%20Up%20Week%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Catch%20Up%20Week%28editable%29.pdf",
+    "related_activities": [
+      "SY36",
+      "SY14",
+      "SY24"
+    ]
   },
   {
     "id": "VI220",
@@ -1072,7 +1362,12 @@
     "keywords": [
       "LLM Error"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%2010%20Year%20Grid.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%2010%20Year%20Grid.pdf",
+    "related_activities": [
+      "PR323",
+      "SY222",
+      "PR227"
+    ]
   },
   {
     "id": "EF320",
@@ -1091,7 +1386,12 @@
       "task management",
       "time management"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E6%20-%2010Min%20Rule.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E6%20-%2010Min%20Rule.pdf",
+    "related_activities": [
+      "EF215",
+      "EF32",
+      "VI27"
+    ]
   },
   {
     "id": "VI20",
@@ -1110,7 +1410,12 @@
       "General Goals",
       "Personal Development"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Outcome%20Control%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Outcome%20Control%28editable%29.pdf",
+    "related_activities": [
+      "VI233",
+      "VI324",
+      "VI30"
+    ]
   },
   {
     "id": "AT321",
@@ -1129,7 +1434,12 @@
       "Strategies",
       "Motivation"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A1-Force%20Field.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A1-Force%20Field.pdf",
+    "related_activities": [
+      "AT12",
+      "AT229",
+      "PR234"
+    ]
   },
   {
     "id": "AT221",
@@ -1142,7 +1452,12 @@
     "keywords": [
       "1. Confidence\n2. Achievement\n3. Inner critic\n4. Self-belief\n5. Success\n6. Performance improvement\n7. Dr. Steve Bull"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20The%20Battery.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20The%20Battery.pdf",
+    "related_activities": [
+      "AT310",
+      "EF317",
+      "AT340"
+    ]
   },
   {
     "id": "AT21",
@@ -1155,7 +1470,12 @@
     "keywords": [
       "1. Study problems\n2. Solutions\n3. Motivation\n4. Deadlines\n5. Time management\n6. Implementation\n7. Goal setting"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%205%2C5%2C5.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%205%2C5%2C5.pdf",
+    "related_activities": [
+      "AT12",
+      "EF329",
+      "PR230"
+    ]
   },
   {
     "id": "VI322",
@@ -1168,7 +1488,12 @@
     "keywords": [
       "- Perfect Day\n- Work\n- Goals\n- Vision\n- Team\n- Challenges\n- Routine"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V5%20-%20Perfect%20Day.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V5%20-%20Perfect%20Day.pdf",
+    "related_activities": [
+      "VI30",
+      "EF215",
+      "VI20"
+    ]
   },
   {
     "id": "SY222",
@@ -1187,7 +1512,12 @@
       "Understanding",
       "Enjoying"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%20The%20Bottom%20Left.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%20The%20Bottom%20Left.pdf",
+    "related_activities": [
+      "SY237",
+      "SY335",
+      "SY39"
+    ]
   },
   {
     "id": "EF22",
@@ -1206,7 +1536,12 @@
       "initiate",
       "self-motivation"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Activating%20%26%20Sustaining%28Editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Activating%20%26%20Sustaining%28Editable%29.pdf",
+    "related_activities": [
+      "EF224",
+      "EF32",
+      "EF23"
+    ]
   },
   {
     "id": "AT223",
@@ -1225,7 +1560,12 @@
       "Blue Zone",
       "Green Zone"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Managing%20Reactions.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Managing%20Reactions.pdf",
+    "related_activities": [
+      "AT33",
+      "AT319",
+      "VI219"
+    ]
   },
   {
     "id": "PR323",
@@ -1238,7 +1578,12 @@
     "keywords": [
       "1. Practice Activity\n2. Skill development\n3. Learning process\n4. Error analysis\n5. Understanding enhancement\n6. Educational strategy\n7. Self-assessment"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P6-Right%2CWrong%2CRight.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P6-Right%2CWrong%2CRight.pdf",
+    "related_activities": [
+      "PR316",
+      "PR338",
+      "PR331"
+    ]
   },
   {
     "id": "PR23",
@@ -1257,7 +1602,12 @@
       "Recall Questions",
       "Inference Questions"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Closed%20Book%20Notetaking%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Closed%20Book%20Notetaking%28editable%29.pdf",
+    "related_activities": [
+      "PR33",
+      "PR232",
+      "PR216"
+    ]
   },
   {
     "id": "VI324",
@@ -1270,7 +1620,12 @@
     "keywords": [
       "1. SMART goals\n2. Goal setting\n3. Specific\n4. Measurable\n5. Action-based\n6. Realistic\n7. Time-bound"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V6%20-%20SMART%20Goals.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V6%20-%20SMART%20Goals.pdf",
+    "related_activities": [
+      "VI27",
+      "VI20",
+      "VI217"
+    ]
   },
   {
     "id": "EF224",
@@ -1283,7 +1638,12 @@
     "keywords": [
       "1. Effort Thermometer\n2. Study habits\n3. Work ethic\n4. Proactive\n5. Habits\n6. Hard work\n7. Success"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Effort%20Thermometer.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Effort%20Thermometer.pdf",
+    "related_activities": [
+      "EF1",
+      "EF225",
+      "EF32"
+    ]
   },
   {
     "id": "SY24",
@@ -1302,7 +1662,12 @@
       "goal setting",
       "study planning"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%201%25%20Planning%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%201%25%20Planning%28editable%29.pdf",
+    "related_activities": [
+      "SY38",
+      "SY38",
+      "SY19"
+    ]
   },
   {
     "id": "SY325",
@@ -1321,7 +1686,12 @@
       "resources",
       "deadlines"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S5-STQR.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S5-STQR.pdf",
+    "related_activities": [
+      "SY337",
+      "SY318",
+      "VI27"
+    ]
   },
   {
     "id": "EF225",
@@ -1340,7 +1710,12 @@
       "Behavior",
       "Prioritization"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Packing%20Bags.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Packing%20Bags.pdf",
+    "related_activities": [
+      "EF224",
+      "EF23",
+      "EF317"
+    ]
   },
   {
     "id": "VI25",
@@ -1353,7 +1728,12 @@
     "keywords": [
       "1. Pathways\n2. Achievement\n3. Innovation map\n4. Progress\n5. Responsibilities\n6. Journalism\n7. Trigger Event"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Paths%20are%20well%20lit%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Paths%20are%20well%20lit%28editable%29.pdf",
+    "related_activities": [
+      "VI25",
+      "VI218",
+      "VI34"
+    ]
   },
   {
     "id": "VI326",
@@ -1366,7 +1746,12 @@
     "keywords": [
       "1. Decision-making\n2. Goal setting\n3. Pretend technique\n4. Research skills\n5. Career exploration\n6. Educational activity\n7. Vision activity"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V8%20-%20Fake%20It%21.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V8%20-%20Fake%20It%21.pdf",
+    "related_activities": [
+      "EF240",
+      "VI236",
+      "VI219"
+    ]
   },
   {
     "id": "EF226",
@@ -1385,7 +1770,12 @@
       "focus",
       "task management"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%2025min%20Sprints.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%2025min%20Sprints.pdf",
+    "related_activities": [
+      "EF320",
+      "SY24",
+      "SY237"
+    ]
   },
   {
     "id": "AT26",
@@ -1398,7 +1788,12 @@
     "keywords": [
       "- Learning curve\n- Progress plateaus\n- Study changes\n- Test results\n- Time management\n- Confidence\n- Micro-changes"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20The%20Myth%20of%20the%20Curve%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20The%20Myth%20of%20the%20Curve%28editable%29.pdf",
+    "related_activities": [
+      "AT339",
+      "AT33",
+      "VI217"
+    ]
   },
   {
     "id": "PR327",
@@ -1417,7 +1812,12 @@
       "Flow chart",
       "Metaphor"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P3-Graphic%20Organisers.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P3-Graphic%20Organisers.pdf",
+    "related_activities": [
+      "PR227",
+      "PR234",
+      "PR232"
+    ]
   },
   {
     "id": "PR227",
@@ -1436,7 +1836,12 @@
       "Graphic Organizers",
       "Key Concepts"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%209%20Box%20Grid.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%209%20Box%20Grid.pdf",
+    "related_activities": [
+      "PR336",
+      "SY6",
+      "PR327"
+    ]
   },
   {
     "id": "SY327",
@@ -1455,7 +1860,12 @@
       "task management",
       "efficiency"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S8-Lead%20Domino.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S8-Lead%20Domino.pdf",
+    "related_activities": [
+      "SY328",
+      "EF312",
+      "SY237"
+    ]
   },
   {
     "id": "EF27",
@@ -1468,7 +1878,12 @@
     "keywords": [
       "1. Clarity Countdown\n2. Educational activity\n3. Safety system\n4. Difficult topics\n5. Understanding\n6. Student engagement\n7. Stress management"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Clarity%20Countdown%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Clarity%20Countdown%28editable%29.pdf",
+    "related_activities": [
+      "PR29",
+      "AT239",
+      "SY2"
+    ]
   },
   {
     "id": "SY328",
@@ -1479,7 +1894,12 @@
     "short_summary": "",
     "long_summary": "",
     "keywords": [],
-    "pdf_link": ""
+    "pdf_link": "",
+    "related_activities": [
+      "SY327",
+      "SY335",
+      "VI22"
+    ]
   },
   {
     "id": "PR228",
@@ -1498,7 +1918,12 @@
       "practice",
       "revision"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Will%20vs%20Skill.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Will%20vs%20Skill.pdf",
+    "related_activities": [
+      "PR338",
+      "PR37",
+      "PR331"
+    ]
   },
   {
     "id": "PR28",
@@ -1511,7 +1936,12 @@
     "keywords": [
       "1. Timetables\n2. Revision\n3. Exam performance\n4. Designing\n5. Student behavior\n6. Balance\n7. Relaxation"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Sticky%20Timetables%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Sticky%20Timetables%28editable%29.pdf",
+    "related_activities": [
+      "PR37",
+      "PR214",
+      "SY26"
+    ]
   },
   {
     "id": "AT229",
@@ -1530,7 +1960,12 @@
       "Challenges",
       "Solutions"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Problem%20Solving%20Cycle.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Problem%20Solving%20Cycle.pdf",
+    "related_activities": [
+      "PR230",
+      "AT12",
+      "AT339"
+    ]
   },
   {
     "id": "EF329",
@@ -1543,7 +1978,12 @@
     "keywords": [
       "1. Effort\n2. If/Then Thinking\n3. Implementation Intention\n4. Self-Sabotage\n5. Planning\n6. Obstacles\n7. Solutions"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E8-Power%20of%20If-Then%20thinking.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E8-Power%20of%20If-Then%20thinking.pdf",
+    "related_activities": [
+      "EF313",
+      "AT21",
+      "VI333"
+    ]
   },
   {
     "id": "PR29",
@@ -1562,7 +2002,12 @@
       "recall",
       "lecture preparation"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Verbal%20Recaps%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Verbal%20Recaps%28editable%29.pdf",
+    "related_activities": [
+      "PR23",
+      "PR33",
+      "PR232"
+    ]
   },
   {
     "id": "EF330",
@@ -1581,7 +2026,12 @@
       "Effort",
       "Holiday Patterns"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E2-Working%20Weeks.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E2-Working%20Weeks.pdf",
+    "related_activities": [
+      "EF32",
+      "EF224",
+      "EF225"
+    ]
   },
   {
     "id": "PR230",
@@ -1600,7 +2050,12 @@
       "psychology",
       "model"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20K-SPA.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20K-SPA.pdf",
+    "related_activities": [
+      "AT229",
+      "AT12",
+      "AT21"
+    ]
   },
   {
     "id": "VI30",
@@ -1619,7 +2074,12 @@
       "Academic achievement",
       "Motivation"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Diverandthriver%20Goals%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Diverandthriver%20Goals%28editable%29.pdf",
+    "related_activities": [
+      "VI20",
+      "VI324",
+      "VI34"
+    ]
   },
   {
     "id": "PR331",
@@ -1638,7 +2098,12 @@
       "Examiner's reports",
       "Tracking"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P2%20-%20Know%20the%20Skills.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P2%20-%20Know%20the%20Skills.pdf",
+    "related_activities": [
+      "PR228",
+      "PR338",
+      "PR323"
+    ]
   },
   {
     "id": "PR231",
@@ -1657,7 +2122,12 @@
       "Exam Preparation",
       "Academic Research"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Spaced%20Practice.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Spaced%20Practice.pdf",
+    "related_activities": [
+      "PR232",
+      "PR214",
+      "PR33"
+    ]
   },
   {
     "id": "AT31",
@@ -1670,7 +2140,12 @@
     "keywords": [
       "1. Worst Case Scenarios\n2. Fear Setting\n3. Tim Ferriss\n4. Seneca the Younger\n5. Anxiety Management\n6. Goal Setting\n7. Coping Strategies"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Worst%20Case%20Scenarios%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Worst%20Case%20Scenarios%28editable%29.pdf",
+    "related_activities": [
+      "AT319",
+      "VI37",
+      "AT229"
+    ]
   },
   {
     "id": "PR332",
@@ -1689,7 +2164,12 @@
       "Flexibility in thinking",
       "Unexpected questions."
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P8-Mechanical%20vs%20Flexible.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P8-Mechanical%20vs%20Flexible.pdf",
+    "related_activities": [
+      "PR338",
+      "PR231",
+      "PR214"
+    ]
   },
   {
     "id": "PR232",
@@ -1702,7 +2182,12 @@
     "keywords": [
       "1. Test Yourself\n2. Memory improvement\n3. Testing effect\n4. Long-term memory\n5. Retrieval practice\n6. Study techniques\n7. Exam preparation"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Test%20Yourself.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Test%20Yourself.pdf",
+    "related_activities": [
+      "PR33",
+      "PR40",
+      "PR231"
+    ]
   },
   {
     "id": "EF32",
@@ -1721,7 +2206,12 @@
       "rescue plan",
       "commitment"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Red%20Flag%20Rescue%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Red%20Flag%20Rescue%28editable%29.pdf",
+    "related_activities": [
+      "EF22",
+      "EF1",
+      "EF224"
+    ]
   },
   {
     "id": "VI333",
@@ -1740,7 +2230,12 @@
       "Feasibility",
       "Visualization"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V7%20-%20Mental%20Contrasting.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V7%20-%20Mental%20Contrasting.pdf",
+    "related_activities": [
+      "VI233",
+      "EF329",
+      "VI25"
+    ]
   },
   {
     "id": "VI233",
@@ -1759,7 +2254,12 @@
       "Progress",
       "External Support"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20What%27s%20Stopping%20You.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20What%27s%20Stopping%20You.pdf",
+    "related_activities": [
+      "VI20",
+      "VI333",
+      "VI25"
+    ]
   },
   {
     "id": "PR33",
@@ -1778,7 +2278,12 @@
       "self-testing",
       "exam preparation"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Test%20your%20future%20self%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Test%20your%20future%20self%28editable%29.pdf",
+    "related_activities": [
+      "PR232",
+      "PR23",
+      "PR216"
+    ]
   },
   {
     "id": "AT334",
@@ -1797,7 +2302,12 @@
       "Stress",
       "Rational Thinking"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A2-Stopping%20Negative%20Thoughts.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A2-Stopping%20Negative%20Thoughts.pdf",
+    "related_activities": [
+      "AT339",
+      "EF329",
+      "AT238"
+    ]
   },
   {
     "id": "PR234",
@@ -1816,7 +2326,12 @@
       "engagement",
       "zone"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Finding%20Flow.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20Finding%20Flow.pdf",
+    "related_activities": [
+      "PR235",
+      "VI217",
+      "PR327"
+    ]
   },
   {
     "id": "VI34",
@@ -1829,7 +2344,12 @@
     "keywords": [
       "1. Lifestyle envy\n2. Job envy\n3. Career ambitions\n4. Envy triggers\n5. Working conditions\n6. Responsibilities\n7. Opportunities"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Lifestyle%20vs%20Job%20Envy%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Lifestyle%20vs%20Job%20Envy%28editable%29.pdf",
+    "related_activities": [
+      "VI8",
+      "VI15",
+      "VI11"
+    ]
   },
   {
     "id": "SY335",
@@ -1848,7 +2368,12 @@
       "deadline",
       "business."
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S7-Eisenhower%20Matrix.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S7-Eisenhower%20Matrix.pdf",
+    "related_activities": [
+      "SY237",
+      "SY335",
+      "EF312"
+    ]
   },
   {
     "id": "PR235",
@@ -1861,7 +2386,12 @@
     "keywords": [
       "1. High flow spaces\n2. Productivity\n3. Concentration\n4. Work environment\n5. Study space\n6. Distractions\n7. In-between spaces"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20High%20Flow%20Spaces.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE%20-%20High%20Flow%20Spaces.pdf",
+    "related_activities": [
+      "PR234",
+      "EF10",
+      "PR327"
+    ]
   },
   {
     "id": "SY335",
@@ -1872,7 +2402,12 @@
     "short_summary": "",
     "long_summary": "",
     "keywords": [],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/S7-Matrics%20Eisenhower.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/S7-Matrics%20Eisenhower.pdf",
+    "related_activities": [
+      "SY335",
+      "SY328",
+      "SY222"
+    ]
   },
   {
     "id": "PR35",
@@ -1885,7 +2420,12 @@
     "keywords": [
       "1. Cog P\n2. Cog A\n3. Multiple-choice exam\n4. Short-answer questions\n5. Revision strategies\n6. Active learning\n7. Critical-thinking skills"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Cog%20P%20v%20Cog%20A%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Cog%20P%20v%20Cog%20A%28editable%29.pdf",
+    "related_activities": [
+      "PR37",
+      "PR216",
+      "PR214"
+    ]
   },
   {
     "id": "VI236",
@@ -1898,7 +2438,12 @@
     "keywords": [
       "- Vision Activity\n- Now vs Most\n- Discipline\n- Prioritization\n- Temptations\n- Choices\n- Balance"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Now%20vs%20Most.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION%20-%20Now%20vs%20Most.pdf",
+    "related_activities": [
+      "VI27",
+      "SY14",
+      "EF240"
+    ]
   },
   {
     "id": "PR336",
@@ -1917,7 +2462,12 @@
       "memory retention",
       "learning strategy"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P4-Leitner%20Box.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P4-Leitner%20Box.pdf",
+    "related_activities": [
+      "PR227",
+      "PR232",
+      "PR23"
+    ]
   },
   {
     "id": "SY36",
@@ -1936,7 +2486,12 @@
       "planning",
       "deadlines"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20The%20Sunday%20Night%20Ritual%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20The%20Sunday%20Night%20Ritual%28editable%29.pdf",
+    "related_activities": [
+      "SY19",
+      "SY2",
+      "SY24"
+    ]
   },
   {
     "id": "SY337",
@@ -1955,7 +2510,12 @@
       "Quality Assessment",
       "Educational Tool"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S6-Project%20Progress%20Chart.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S6-Project%20Progress%20Chart.pdf",
+    "related_activities": [
+      "SY325",
+      "SY318",
+      "SY237"
+    ]
   },
   {
     "id": "SY237",
@@ -1975,7 +2535,12 @@
       "academic performance",
       "workload management"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%20Action%20Priority%20Matrix.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS%20-%20Action%20Priority%20Matrix.pdf",
+    "related_activities": [
+      "SY335",
+      "SY222",
+      "SY39"
+    ]
   },
   {
     "id": "VI37",
@@ -1994,7 +2559,12 @@
       "Stanford University",
       "Future Planning"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Odyssey%20Planning%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Odyssey%20Planning%28editable%29.pdf",
+    "related_activities": [
+      "EF240",
+      "SY24",
+      "VI8"
+    ]
   },
   {
     "id": "AT238",
@@ -2014,7 +2584,12 @@
       "setbacks",
       "failures"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Benefit%20Finding.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20Benefit%20Finding.pdf",
+    "related_activities": [
+      "AT24",
+      "AT39",
+      "AT334"
+    ]
   },
   {
     "id": "PR338",
@@ -2033,7 +2608,12 @@
       "slow practice",
       "fast practice"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P5-2%20Slow%2C1%20Fast.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P5-2%20Slow%2C1%20Fast.pdf",
+    "related_activities": [
+      "PR228",
+      "PR231",
+      "PR323"
+    ]
   },
   {
     "id": "AT38",
@@ -2052,7 +2632,12 @@
       "routines",
       "experiments"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20A%20Dozen%20Noticeboards%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20A%20Dozen%20Noticeboards%28editable%29.pdf",
+    "related_activities": [
+      "SY211",
+      "AT24",
+      "SY2"
+    ]
   },
   {
     "id": "AT339",
@@ -2071,7 +2656,12 @@
       "Refocus",
       "Action plan"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A4-There%20%26%20Back.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A4-There%20%26%20Back.pdf",
+    "related_activities": [
+      "AT334",
+      "AT229",
+      "PR230"
+    ]
   },
   {
     "id": "AT339",
@@ -2082,7 +2672,12 @@
     "short_summary": "",
     "long_summary": "",
     "keywords": [],
-    "pdf_link": ""
+    "pdf_link": "",
+    "related_activities": [
+      "AT33",
+      "AT26",
+      "EF225"
+    ]
   },
   {
     "id": "AT239",
@@ -2101,7 +2696,12 @@
       "Wellbeing",
       "Relaxation"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20The%20First%20Aid%20Kit.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE%20-%20The%20First%20Aid%20Kit.pdf",
+    "related_activities": [
+      "PR336",
+      "PR227",
+      "SY24"
+    ]
   },
   {
     "id": "AT39",
@@ -2114,7 +2714,12 @@
     "keywords": [
       "1. Attitude\n2. Attention\n3. Positivity\n4. Mindfulness\n5. Happiness\n6. Gratitude\n7. Focus"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Think%20Three%20Positives%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Think%20Three%20Positives%28editable%29.pdf",
+    "related_activities": [
+      "SY211",
+      "SY14",
+      "VI322"
+    ]
   },
   {
     "id": "AT340",
@@ -2127,7 +2732,12 @@
     "keywords": [
       "1. Attitude\n2. Power poses\n3. Confidence\n4. Physiology\n5. Self-esteem\n6. Posture\n7. Success"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A8-Stand%20Tall.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A8-Stand%20Tall.pdf",
+    "related_activities": [
+      "EF329",
+      "AT221",
+      "AT239"
+    ]
   },
   {
     "id": "EF240",
@@ -2140,7 +2750,12 @@
     "keywords": [
       "- Decision fatigue\n- Behavioral decisions\n- Pre-making decisions\n- Anticipating decisions\n- Future planning\n- Strong decisions\n- Peer pressure"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Pre-Making%20Decisions.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT%20-%20Pre-Making%20Decisions.pdf",
+    "related_activities": [
+      "VI219",
+      "VI37",
+      "VI3"
+    ]
   },
   {
     "id": "PR40",
@@ -2153,7 +2768,12 @@
     "keywords": [
       "1. Overnight Boost\n2. Memory consolidation\n3. Sleep and memory\n4. Study habits\n5. Recall performance\n6. Learning retention\n7. Cognitive processing"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20The%20Overnight%20boost%28editable%29.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20The%20Overnight%20boost%28editable%29.pdf",
+    "related_activities": [
+      "PR232",
+      "PR33",
+      "PR231"
+    ]
   },
   {
     "id": "SY41",
@@ -2172,6 +2792,11 @@
       "Productivity",
       "Task assessment"
     ],
-    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Boosters%20%26%20Sappers.pdf"
+    "pdf_link": "https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Boosters%20%26%20Sappers.pdf",
+    "related_activities": [
+      "SY39",
+      "SY237",
+      "SY327"
+    ]
   }
 ]
