@@ -343,53 +343,159 @@ def normalize_qualification_type(exam_type_str):
 
 def get_points(grade, qualification_type):
     """Convert grade to UCAS points based on qualification type."""
-    if not grade or grade == "N/A" or not grade_points_mapping_kb:
-        return None
-    
-    grade = str(grade).strip().upper()
+    if not grade or grade == "N/A": # Removed check for grade_points_mapping_kb here, will check inside
+        app.logger.warning(f"get_points: Invalid input - grade: {grade}, qual_type: {qualification_type}")
+        return 0
+
+    grade_cleaned = str(grade).strip().upper()
     normalized_qual = normalize_qualification_type(qualification_type)
+    # app.logger.debug(f"get_points: Looking for grade '{grade_cleaned}' in qual '{normalized_qual}'")
+
+    if not grade_points_mapping_kb:
+        app.logger.error("get_points: grade_points_mapping_kb is not loaded.")
+        return 0
+
+    qual_specific_map = grade_points_mapping_kb.get(normalized_qual)
     
-    # Look up in grade_points_mapping_kb
-    for mapping in grade_points_mapping_kb:
-        if (mapping.get('qualificationType') == normalized_qual and 
-            mapping.get('grade', '').upper() == grade):
-            return mapping.get('points', 0)
+    if not qual_specific_map:
+        # app.logger.warning(f"get_points: No grade point mapping found for qualification type: '{normalized_qual}'. Attempting A-Level fallback if applicable.")
+        if normalized_qual == "A Level": # A-Level specific fallback if not in main map
+            grade_to_points_fallback = {
+                'A*': 56, 'A': 48, 'B': 40, 'C': 32, 'D': 24, 'E': 16, 'U': 0
+            }
+            points = grade_to_points_fallback.get(grade_cleaned)
+            if points is not None:
+                # app.logger.info(f"get_points: Used A-Level fallback for grade '{grade_cleaned}', points: {points}")
+                return points
+            else:
+                # app.logger.warning(f"get_points: A-Level fallback also failed for grade '{grade_cleaned}'. Available fallback grades: {list(grade_to_points_fallback.keys())}")
+                pass # Fall through to return 0 at the end
+        # app.logger.warning(f"get_points: No mapping for '{normalized_qual}' and not an A-Level fallback case. Returning 0.")
+        return 0
+
+    points = qual_specific_map.get(grade_cleaned)
     
-    # If no exact match found, try common patterns
-    if normalized_qual == "A Level":
-        grade_to_points = {
-            'A*': 56, 'A': 48, 'B': 40, 'C': 32, 'D': 24, 'E': 16
-        }
-        return grade_to_points.get(grade, 0)
-    
-    return 0
+    # Handle common variations like "Dist*" vs "D*"
+    if points is None:
+        if grade_cleaned == "DIST*": points = qual_specific_map.get("D*")
+        elif grade_cleaned == "DIST": points = qual_specific_map.get("D")
+        elif grade_cleaned == "MERIT": points = qual_specific_map.get("M")
+        elif grade_cleaned == "PASS": points = qual_specific_map.get("P")
+        # Add other BTEC/vocational grade variations if necessary, e.g. D*D*, DD, MM etc.
+        # For example, if grade_cleaned is "D*D*" and qual_specific_map has "D*D*", it will be found.
+
+    if points is not None:
+        # app.logger.debug(f"get_points: Found points: {points} for grade '{grade_cleaned}' in '{normalized_qual}'.")
+        return int(points)
+    else:
+        # app.logger.warning(f"get_points: No points found for grade '{grade_cleaned}' (original: '{grade}') in qualification '{normalized_qual}'. Available grades in map: {list(qual_specific_map.keys()) if qual_specific_map else 'N/A'}. Returning 0 points.")
+        return 0
 
 def get_meg_for_prior_attainment(prior_attainment_score, qualification_type, percentile=75):
     """Get MEG based on prior attainment score and qualification type."""
     if prior_attainment_score is None:
-        return None, None
-    
+        app.logger.warning(f"get_meg_for_prior_attainment: prior_attainment_score is None for qual '{qualification_type}'.")
+        return "N/A", 0
+
+    try:
+        score = float(prior_attainment_score)
+    except (ValueError, TypeError):
+        app.logger.warning(f"get_meg_for_prior_attainment: Could not convert prior_attainment_score '{prior_attainment_score}' to float.")
+        return "N/A", 0
+
     normalized_qual = normalize_qualification_type(qualification_type)
     
-    # For A-Levels, use ALPS bands
+    benchmark_table_data = None
     if normalized_qual == "A Level":
-        if percentile == 60 and alps_bands_aLevel_75_kb:  # Using 75th as proxy for now
-            # This is simplified - in reality you'd load the appropriate KB
-            bands_kb = alps_bands_aLevel_75_kb
-        elif percentile == 75 and alps_bands_aLevel_75_kb:
-            bands_kb = alps_bands_aLevel_75_kb
+        if percentile == 60:
+            benchmark_table_data = alps_bands_aLevel_60_kb
+        elif percentile == 75:
+            benchmark_table_data = alps_bands_aLevel_75_kb
+        elif percentile == 90:
+            benchmark_table_data = alps_bands_aLevel_90_kb
+        elif percentile == 100:
+            benchmark_table_data = alps_bands_aLevel_100_kb
         else:
-            bands_kb = alps_bands_aLevel_75_kb  # Default to 75th
-        
-        if bands_kb:
-            for band in bands_kb:
-                if (band.get('lowerBound', 0) <= prior_attainment_score <= band.get('upperBound', 999)):
-                    meg_grade = band.get('minimumGrade', 'C')
-                    meg_points = get_points(meg_grade, normalized_qual)
-                    return meg_grade, meg_points
-    
-    # Default fallback
-    return 'C', get_points('C', normalized_qual)
+            app.logger.warning(f"get_meg_for_prior_attainment: Unsupported percentile '{percentile}' for A-Level. Defaulting to 75th.")
+            benchmark_table_data = alps_bands_aLevel_75_kb
+    # Add logic for other qualification types here if they have specific percentile tables
+    # For now, if not A-Level, benchmark_table_data remains None and will hit the next check.
+
+    if not benchmark_table_data:
+        app.logger.warning(f"get_meg_for_prior_attainment: No ALPS benchmark table data loaded or selected for qual '{normalized_qual}', percentile '{percentile}'.")
+        # Consider a more generic fallback or error handling if needed for non-A-Level quals
+        # For now, this will lead to returning "N/A", 0 if no table is found.
+        # If other qual types (BTEC, IB etc.) should use a default table (e.g. alps_bands_aLevel_75_kb as a proxy)
+        # that logic would go here. For this fix, we focus on A-Level path.
+        # Example: if normalized_qual == "AS Level": benchmark_table_data = alps_bands_aLevel_75_kb # Using 75th as proxy
+        # This function's scope is currently limited by the KBs loaded for the student app.
+        # The tutor app has more comprehensive ALPS band loading and selection.
+        # For now, if not A-Level or table is missing, it will proceed to the loop (which won't run if benchmark_table_data is None)
+        # and then hit the final fallback.
+        if normalized_qual != "A Level":
+             app.logger.info(f"get_meg_for_prior_attainment: No specific ALPS percentile table logic for '{normalized_qual}'. Will use general fallback if score not in bands.")
+             # Attempt to use a default like A-Level 75th for non-A-Levels if a generic lookup is desired.
+             # This depends on the expectation for non-A-Level MEGs.
+             # For now, it will pass through and use the final fallback if the loop doesn't match.
+
+    if benchmark_table_data: # Only proceed if a table was selected/loaded
+        for band_info in benchmark_table_data: # benchmark_table_data is a list of dicts
+            min_score_val = None
+            max_score_val = None
+            # More robust key checking, similar to tutor app
+            possible_min_keys = ["gcseMinScore", "gcseMin", "Avg GCSE score Min", "Prior Attainment Min", "lowerBound"]
+            possible_max_keys = ["gcseMaxScore", "gcseMax", "Avg GCSE score Max", "Prior Attainment Max", "upperBound"]
+            possible_meg_keys = ["megAspiration", "MEG Aspiration", "minimumGrade", "megGrade", "MEG"]
+
+            for key in possible_min_keys:
+                if key in band_info:
+                    min_score_val = band_info[key]
+                    break
+            for key in possible_max_keys:
+                if key in band_info:
+                    max_score_val = band_info[key]
+                    break
+            
+            meg_aspiration_grade = "N/A"
+            for key in possible_meg_keys:
+                if key in band_info:
+                    meg_aspiration_grade = band_info[key]
+                    break
+            
+            if min_score_val is not None:
+                try:
+                    min_s = float(min_score_val)
+                    # Determine max_s for range check. Assume inclusive max if only min_s is defined (point score)
+                    # or exclusive max if max_score_val is present (range).
+                    # This needs to align with how ALPS defines their bands.
+                    # Common ALPS tables are [min_score, max_score) - min inclusive, max exclusive
+                    max_s_is_exclusive_upper_bound = max_score_val is not None
+                    max_s = float(max_score_val) if max_score_val is not None else float('inf')
+                    
+                    in_band = False
+                    if max_s_is_exclusive_upper_bound:
+                        if score >= min_s and score < max_s:
+                            in_band = True
+                    else: # If max_score_val is not typical, could be point-based or inclusive upper
+                        if score >= min_s and (max_score_val is None or score <= max_s): # Default to inclusive if max_s logic unsure
+                             in_band = True
+
+                    if in_band:
+                        meg_points_val = get_points(meg_aspiration_grade, normalized_qual)
+                        # app.logger.info(f"get_meg_for_prior_attainment: Found band for score {score}. MEG Grade: {meg_aspiration_grade}, Points: {meg_points_val}")
+                        return meg_aspiration_grade, meg_points_val if meg_points_val is not None else 0
+                except (ValueError, TypeError) as e_conv:
+                    app.logger.warning(f"get_meg_for_prior_attainment: Error converting band scores for band {band_info}: {e_conv}")
+                    continue
+        app.logger.warning(f"get_meg_for_prior_attainment: Score {score} not in any band of the selected table for qual '{normalized_qual}', percentile '{percentile}'. Table (first 200 chars): {str(benchmark_table_data)[:200]}...")
+    else: # If benchmark_table_data was None (e.g. missing KB or non-Alevel without specific table)
+        app.logger.warning(f"get_meg_for_prior_attainment: No benchmark_table_data to process for qual '{normalized_qual}', percentile '{percentile}'.")
+
+    # Fallback if score not in any band or no table was processed
+    default_grade_fallback = "N/A" 
+    default_points_fallback = 0 # get_points for "N/A" should yield 0 with the updated get_points
+    app.logger.warning(f"get_meg_for_prior_attainment: Using fallback MEG '{default_grade_fallback}' ({default_points_fallback} pts) for PA {score}, Qual '{normalized_qual}', Pctl '{percentile}'.")
+    return default_grade_fallback, default_points_fallback
 
 # Load additional ALPS KBs if available
 alps_bands_aLevel_60_kb = load_json_file('alpsBands_aLevel_60.json')
