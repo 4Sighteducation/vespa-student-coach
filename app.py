@@ -7,7 +7,7 @@ import logging
 import requests # For Knack API calls
 import time # For cache expiry
 from datetime import datetime # For timestamp parsing
-# import openai # Placeholder for when LLM is integrated
+import openai # For LLM integration
 
 # Load environment variables from .env file (optional, Heroku uses config vars)
 load_dotenv()
@@ -170,6 +170,296 @@ def get_score_profile_text(score_value):
     except (ValueError, TypeError):
         return "N/A"
 
+# --- NEW: Add comprehensive data processing functions ---
+
+def get_all_knack_records(object_key, filters=None, max_records=None):
+    """Fetches all records from a Knack object, handling pagination."""
+    all_records = []
+    page = 1
+    rows_per_page = 1000  # Max allowed by Knack
+    
+    while True:
+        response = get_knack_record(object_key, filters=filters, page=page, rows_per_page=rows_per_page)
+        if not response or not response.get('records'):
+            break
+        
+        all_records.extend(response['records'])
+        
+        if max_records and len(all_records) >= max_records:
+            all_records = all_records[:max_records]
+            break
+        
+        # Check if there are more pages
+        total_records = response.get('total_records', 0)
+        if len(all_records) >= total_records or page * rows_per_page >= total_records:
+            break
+        
+        page += 1
+    
+    return all_records
+
+def get_school_vespa_averages(school_name):
+    """Calculate average VESPA scores for all students in a school."""
+    if not school_name:
+        app.logger.warning("No school name provided for VESPA averages.")
+        return None
+    
+    # Filter for students in the same school
+    filters = [{'field': 'field_568', 'operator': 'is', 'value': school_name}]
+    
+    # Get all Object_10 records for this school
+    all_students = get_all_knack_records("object_10", filters=filters)
+    
+    if not all_students:
+        app.logger.warning(f"No students found for school: {school_name}")
+        return None
+    
+    # Initialize sums and counts for each VESPA element
+    vespa_sums = {"Vision": 0, "Effort": 0, "Systems": 0, "Practice": 0, "Attitude": 0}
+    vespa_counts = {"Vision": 0, "Effort": 0, "Systems": 0, "Practice": 0, "Attitude": 0}
+    
+    # Field mappings for VESPA scores
+    field_mappings = {
+        "Vision": "field_147",
+        "Effort": "field_148",
+        "Systems": "field_149",
+        "Practice": "field_150",
+        "Attitude": "field_151"
+    }
+    
+    # Calculate sums and counts
+    for student in all_students:
+        for element, field in field_mappings.items():
+            score = student.get(field)
+            if score is not None and score != "N/A":
+                try:
+                    score_float = float(score)
+                    vespa_sums[element] += score_float
+                    vespa_counts[element] += 1
+                except (ValueError, TypeError):
+                    continue
+    
+    # Calculate averages
+    vespa_averages = {}
+    for element in vespa_sums:
+        if vespa_counts[element] > 0:
+            vespa_averages[element] = round(vespa_sums[element] / vespa_counts[element], 1)
+        else:
+            vespa_averages[element] = "N/A"
+    
+    app.logger.info(f"Calculated VESPA averages for {school_name}: {vespa_averages}")
+    return vespa_averages
+
+def normalize_qualification_type(exam_type_str):
+    """Normalize qualification type strings to standard format."""
+    if not exam_type_str:
+        return "Unknown"
+    
+    exam_type_str = str(exam_type_str).strip()
+    
+    # A-Level variations
+    if any(x in exam_type_str.upper() for x in ['A LEVEL', 'A-LEVEL', 'A2', 'ALEVEL']):
+        return "A Level"
+    
+    # AS Level
+    if 'AS LEVEL' in exam_type_str.upper() or 'AS-LEVEL' in exam_type_str.upper():
+        return "AS Level"
+    
+    # IB
+    if 'IB HL' in exam_type_str.upper() or 'INTERNATIONAL BACCALAUREATE HL' in exam_type_str.upper():
+        return "IB HL"
+    if 'IB SL' in exam_type_str.upper() or 'INTERNATIONAL BACCALAUREATE SL' in exam_type_str.upper():
+        return "IB SL"
+    
+    # BTEC
+    if 'BTEC' in exam_type_str.upper():
+        if 'EXTENDED DIPLOMA' in exam_type_str.upper():
+            return "BTEC Level 3 Extended Diploma"
+        elif 'DIPLOMA' in exam_type_str.upper() and 'EXTENDED' not in exam_type_str.upper():
+            return "BTEC Level 3 Diploma"
+        elif 'SUBSIDIARY' in exam_type_str.upper():
+            return "BTEC Level 3 Subsidiary Diploma"
+        elif 'CERTIFICATE' in exam_type_str.upper():
+            return "BTEC Level 3 Extended Certificate"
+        else:
+            return "BTEC Level 3"
+    
+    # Pre-U
+    if 'PRE-U' in exam_type_str.upper() or 'PRE U' in exam_type_str.upper():
+        if 'SHORT' in exam_type_str.upper():
+            return "Pre-U Short Course"
+        else:
+            return "Pre-U Principal Subject"
+    
+    # UAL
+    if 'UAL' in exam_type_str.upper():
+        if 'EXTENDED' in exam_type_str.upper():
+            return "UAL Level 3 Extended Diploma"
+        elif 'DIPLOMA' in exam_type_str.upper():
+            return "UAL Level 3 Diploma"
+        else:
+            return "UAL Level 3"
+    
+    # CACHE
+    if 'CACHE' in exam_type_str.upper():
+        if 'EXTENDED' in exam_type_str.upper():
+            return "CACHE Level 3 Extended Diploma"
+        elif 'DIPLOMA' in exam_type_str.upper():
+            return "CACHE Level 3 Diploma"
+        elif 'CERTIFICATE' in exam_type_str.upper():
+            return "CACHE Level 3 Certificate"
+        elif 'AWARD' in exam_type_str.upper():
+            return "CACHE Level 3 Award"
+        else:
+            return "CACHE Level 3"
+    
+    return exam_type_str  # Return original if no match
+
+def get_points(grade, qualification_type):
+    """Convert grade to UCAS points based on qualification type."""
+    if not grade or grade == "N/A" or not grade_points_mapping_kb:
+        return None
+    
+    grade = str(grade).strip().upper()
+    normalized_qual = normalize_qualification_type(qualification_type)
+    
+    # Look up in grade_points_mapping_kb
+    for mapping in grade_points_mapping_kb:
+        if (mapping.get('qualificationType') == normalized_qual and 
+            mapping.get('grade', '').upper() == grade):
+            return mapping.get('points', 0)
+    
+    # If no exact match found, try common patterns
+    if normalized_qual == "A Level":
+        grade_to_points = {
+            'A*': 56, 'A': 48, 'B': 40, 'C': 32, 'D': 24, 'E': 16
+        }
+        return grade_to_points.get(grade, 0)
+    
+    return 0
+
+def get_meg_for_prior_attainment(prior_attainment_score, qualification_type, percentile=75):
+    """Get MEG based on prior attainment score and qualification type."""
+    if prior_attainment_score is None:
+        return None, None
+    
+    normalized_qual = normalize_qualification_type(qualification_type)
+    
+    # For A-Levels, use ALPS bands
+    if normalized_qual == "A Level":
+        if percentile == 60 and alps_bands_aLevel_75_kb:  # Using 75th as proxy for now
+            # This is simplified - in reality you'd load the appropriate KB
+            bands_kb = alps_bands_aLevel_75_kb
+        elif percentile == 75 and alps_bands_aLevel_75_kb:
+            bands_kb = alps_bands_aLevel_75_kb
+        else:
+            bands_kb = alps_bands_aLevel_75_kb  # Default to 75th
+        
+        if bands_kb:
+            for band in bands_kb:
+                if (band.get('lowerBound', 0) <= prior_attainment_score <= band.get('upperBound', 999)):
+                    meg_grade = band.get('minimumGrade', 'C')
+                    meg_points = get_points(meg_grade, normalized_qual)
+                    return meg_grade, meg_points
+    
+    # Default fallback
+    return 'C', get_points('C', normalized_qual)
+
+# Load additional ALPS KBs if available
+alps_bands_aLevel_60_kb = load_json_file('alpsBands_aLevel_60.json')
+alps_bands_aLevel_90_kb = load_json_file('alpsBands_aLevel_90.json')
+alps_bands_aLevel_100_kb = load_json_file('alpsBands_aLevel_100.json')
+
+# --- LLM Integration for Student Insights ---
+def generate_student_insights_with_llm(student_data):
+    """Generate personalized insights for students using OpenAI."""
+    if not OPENAI_API_KEY:
+        app.logger.warning("OpenAI API key not set. Returning placeholder insights.")
+        return None
+    
+    try:
+        openai.api_key = OPENAI_API_KEY
+        
+        # Build context for the LLM
+        context = f"""
+You are an AI coach helping a student understand their VESPA profile and academic performance. 
+Generate encouraging, constructive insights tailored for the student themselves (not their tutor).
+
+Student: {student_data.get('student_name', 'Student')}
+Current Cycle: {student_data.get('current_cycle', 0)}
+
+VESPA Profile:
+{json.dumps(student_data.get('vespa_profile', {}), indent=2)}
+
+Academic Summary:
+{json.dumps(student_data.get('academic_profile_summary', []), indent=2)}
+
+Student Reflections:
+{json.dumps(student_data.get('student_reflections_and_goals', {}), indent=2)}
+
+Questionnaire Highlights:
+Top 3 responses: {json.dumps(student_data.get('object29_question_highlights', {}).get('top_3', []), indent=2)}
+Bottom 3 responses: {json.dumps(student_data.get('object29_question_highlights', {}).get('bottom_3', []), indent=2)}
+"""
+
+        # Create the prompt
+        prompt = f"""{context}
+
+Based on this data, provide the following insights for the student:
+
+1. **Student Overview Summary** (2-3 sentences): A personalized, encouraging summary highlighting their strengths and areas for growth.
+
+2. **Chart Comparative Insights** (2-3 sentences): Help them understand what their VESPA scores mean compared to their school average (if available).
+
+3. **Questionnaire Reflection** (3-4 sentences): Help them understand what their questionnaire responses reveal about their learning approach and mindset.
+
+4. **Academic Benchmark Analysis** (2-3 sentences): Explain how their current grades compare to their potential (MEGs) in an encouraging way.
+
+5. **Suggested Goals** (3 specific, actionable goals): Based on their profile, what should they focus on?
+
+Format your response as a JSON object with these keys:
+- student_overview_summary
+- chart_comparative_insights
+- questionnaire_interpretation_and_reflection_summary
+- academic_benchmark_analysis
+- suggested_student_goals (as an array of strings)
+
+Be positive, specific, and actionable. Use "you" and "your" to speak directly to the student."""
+
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a supportive AI coach helping students improve their learning through the VESPA framework (Vision, Effort, Systems, Practice, Attitude)."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
+        
+        # Parse the response
+        response_text = response.choices[0].message.content
+        
+        # Try to parse as JSON
+        try:
+            insights = json.loads(response_text)
+            app.logger.info("Successfully generated LLM insights for student.")
+            return insights
+        except json.JSONDecodeError:
+            # If not valid JSON, try to extract insights manually
+            app.logger.warning("LLM response was not valid JSON. Using fallback parsing.")
+            # Simple fallback - just return the text as overview
+            return {
+                "student_overview_summary": response_text[:200] + "...",
+                "chart_comparative_insights": "Please review your VESPA scores to understand your strengths.",
+                "questionnaire_interpretation_and_reflection_summary": "Your questionnaire responses provide insights into your learning approach.",
+                "academic_benchmark_analysis": "Compare your current grades with your expected grades to identify areas for improvement.",
+                "suggested_student_goals": ["Focus on your lowest VESPA score", "Set specific study goals", "Track your progress weekly"]
+            }
+            
+    except Exception as e:
+        app.logger.error(f"Error generating LLM insights: {e}")
+        return None
+
 # --- Main API Endpoint --- 
 @app.route('/api/v1/student_coaching_data', methods=['POST', 'OPTIONS'])
 def student_coaching_data():
@@ -297,11 +587,18 @@ def student_coaching_data():
         current_cycle = 0
         vespa_scores_for_profile = {}
         student_reflections = {}
+        school_name = None
+        school_vespa_averages = None
+        
         if object10_data:
             current_cycle_str = object10_data.get("field_146_raw", "0")
             # Ensure current_cycle_str is treated as a string before isdigit()
             current_cycle = int(str(current_cycle_str)) if str(current_cycle_str).isdigit() else 0
             app.logger.info(f"Student's current cycle from Object_10: {current_cycle}")
+            
+            # Get school name for averages calculation
+            school_name = object10_data.get("field_568_raw", object10_data.get("field_568"))
+            
             vespa_scores_for_profile = {
                 "Vision": {"score_1_to_10": object10_data.get("field_147"), "score_profile_text": get_score_profile_text(object10_data.get("field_147"))},
                 "Effort": {"score_1_to_10": object10_data.get("field_148"), "score_profile_text": get_score_profile_text(object10_data.get("field_148"))},
@@ -313,6 +610,10 @@ def student_coaching_data():
                 f"rrc{current_cycle}_comment": object10_data.get(f"field_{2301+current_cycle}"), # RRC1=2302, RRC2=2303, RRC3=2304
                 f"goal{current_cycle}": object10_data.get(f"field_{2498+current_cycle}" if current_cycle==1 else f"field_{2491+current_cycle}") # Goal1=2499, Goal2=2493, Goal3=2494
             }
+            
+            # Calculate school VESPA averages
+            if school_name:
+                school_vespa_averages = get_school_vespa_averages(school_name)
         else:
             app.logger.warning(f"No Object_10 data for student {student_name_from_obj3} (Email: {student_email})")
             # Populate with N/A or defaults if Object_10 is missing
@@ -357,29 +658,74 @@ def student_coaching_data():
             app.logger.error("Psychometric Question Details KB not loaded. Cannot process Object_29.")
 
         # 4. Fetch Academic Profile (Object_112)
-        academic_summary = [] # Placeholder
+        academic_summary = []
+        academic_megs = {}
+        prior_attainment_score = None
+        
         object112_data = get_student_academic_profile(student_object3_id)
         if object112_data:
             app.logger.info(f"Fetched Object_112 data for student: {object112_data.get('field_3066')} (Name in Obj112)")
-            # Basic parsing, needs to match the more complex logic from tutor app.py for full detail
+            
+            # Get prior attainment score (field_3272)
+            prior_attainment_raw = object112_data.get('field_3272_raw', object112_data.get('field_3272'))
+            if prior_attainment_raw:
+                try:
+                    prior_attainment_score = float(prior_attainment_raw)
+                    app.logger.info(f"Prior attainment score: {prior_attainment_score}")
+                except (ValueError, TypeError):
+                    app.logger.warning(f"Could not parse prior attainment score: {prior_attainment_raw}")
+            
+            # Calculate overall MEGs if prior attainment is available
+            if prior_attainment_score is not None:
+                academic_megs["prior_attainment_score"] = prior_attainment_score
+                
+                # Calculate A-Level MEGs at different percentiles
+                for percentile, label in [(60, "60th"), (75, "75th"), (90, "90th"), (100, "100th")]:
+                    meg_grade, meg_points = get_meg_for_prior_attainment(prior_attainment_score, "A Level", percentile)
+                    if meg_grade:
+                        academic_megs[f"aLevel_meg_grade_{label}"] = meg_grade
+                        academic_megs[f"aLevel_meg_points_{label}"] = meg_points or 0
+            
+            # Process each subject
             for i in range(1, 16): # Sub1 to Sub15
                 subject_json_str = object112_data.get(f"field_30{79+i}") # e.g. field_3080
                 if subject_json_str and isinstance(subject_json_str, str) and subject_json_str.strip().startswith('{'):
                     try:
                         s_data = json.loads(subject_json_str)
-                        # Basic extraction, needs more robust point/MEG calculation later
-                        norm_qual = s_data.get('examType', 'A Level') # Simplified for now
+                        subject_name = s_data.get('subject', f'Subject {i}')
+                        exam_type = s_data.get('examType', 'A Level')
+                        norm_qual = normalize_qualification_type(exam_type)
                         current_grade = s_data.get('currentGrade', 'N/A')
-                        academic_summary.append({
-                            "subject": s_data.get('subject', f'Subject {i}'),
+                        
+                        # Calculate points for current grade
+                        current_points = get_points(current_grade, norm_qual) if current_grade != 'N/A' else 0
+                        
+                        # Get standard MEG (75th percentile for A-Level, or default)
+                        standard_meg, standard_meg_points = None, None
+                        if prior_attainment_score is not None:
+                            standard_meg, standard_meg_points = get_meg_for_prior_attainment(prior_attainment_score, norm_qual, 75)
+                        
+                        subject_entry = {
+                            "subject": subject_name,
                             "currentGrade": current_grade,
                             "targetGrade": s_data.get('targetGrade', 'N/A'),
                             "effortGrade": s_data.get('effortGrade', 'N/A'),
-                            "examType": s_data.get('examType', 'N/A'),
+                            "examType": exam_type,
                             "normalized_qualification_type": norm_qual,
-                            "currentGradePoints": 0, # Placeholder, need get_points logic
-                            "standardMegPoints": 0 # Placeholder, need get_meg logic
-                        })
+                            "currentGradePoints": current_points,
+                            "standard_meg": standard_meg or 'N/A',
+                            "standardMegPoints": standard_meg_points or 0
+                        }
+                        
+                        # For A-Levels, add percentile MEGs
+                        if norm_qual == "A Level" and prior_attainment_score is not None:
+                            for percentile in [60, 90, 100]:
+                                meg_grade, meg_points = get_meg_for_prior_attainment(prior_attainment_score, norm_qual, percentile)
+                                if meg_points is not None:
+                                    subject_entry[f"megPoints{percentile}"] = meg_points
+                        
+                        academic_summary.append(subject_entry)
+                        
                     except json.JSONDecodeError:
                         app.logger.warning(f"Could not parse subject JSON from field_30{79+i} in Object_112.")
         else:
@@ -387,16 +733,31 @@ def student_coaching_data():
             academic_summary.append({"subject": "Academic data not found.", "currentGrade": "N/A"})
 
 
-        # TODO: Integrate LLM call here later. For now, use placeholders or basic derived insights.
-        llm_insights_placeholder = {
-            "student_overview_summary": f"Snapshot for {student_name_from_obj3}: Focus on areas from your VESPA profile and questionnaire.",
-            "chart_comparative_insights": "Compare your scores to understand your strengths.",
-            "most_important_coaching_questions": ["What is one thing you want to improve?"],
-            "student_comment_analysis": "Your reflections are a good starting point.",
-            "suggested_student_goals": ["Set a small, achievable goal for this week."],
-            "academic_benchmark_analysis": "Review your grades against any targets you have.",
-            "questionnaire_interpretation_and_reflection_summary": "Think about why you answered the questionnaire statements the way you did."
+        # Generate LLM insights
+        llm_data_for_insights = {
+            "student_name": student_name_from_obj3,
+            "current_cycle": current_cycle,
+            "vespa_profile": vespa_scores_for_profile,
+            "academic_profile_summary": academic_summary,
+            "student_reflections_and_goals": student_reflections,
+            "object29_question_highlights": object29_highlights_top_bottom
         }
+        
+        llm_insights = generate_student_insights_with_llm(llm_data_for_insights)
+        
+        # Use LLM insights if available, otherwise fall back to placeholders
+        if not llm_insights:
+            llm_insights = {
+                "student_overview_summary": f"Welcome {student_name_from_obj3}! Your VESPA profile shows unique strengths and opportunities for growth. Let's explore them together.",
+                "chart_comparative_insights": "Your VESPA scores show your current learning approach. Compare them with the school average to see where you stand.",
+                "questionnaire_interpretation_and_reflection_summary": "Your questionnaire responses reveal important insights about your learning mindset and habits.",
+                "academic_benchmark_analysis": "Your grades show your current performance. The MEG benchmarks indicate what's possible with focused effort.",
+                "suggested_student_goals": [
+                    "Focus on improving your lowest VESPA score this week",
+                    "Set a specific study goal for your most challenging subject",
+                    "Track your progress daily using a simple journal"
+                ]
+            }
 
         final_response = {
             "student_name": student_name_from_obj3,
@@ -404,11 +765,12 @@ def student_coaching_data():
             "current_cycle": current_cycle,
             "vespa_profile": vespa_scores_for_profile,
             "academic_profile_summary": academic_summary,
+            "academic_megs": academic_megs,
             "student_reflections_and_goals": student_reflections,
             "object29_question_highlights": object29_highlights_top_bottom,
-            "llm_generated_insights": llm_insights_placeholder, 
+            "llm_generated_insights": llm_insights, 
             "all_scored_questionnaire_statements": all_scored_statements,
-            "school_vespa_averages": None # Placeholder, add if get_school_vespa_averages is used
+            "school_vespa_averages": school_vespa_averages
         }
         return jsonify(final_response), 200
 
