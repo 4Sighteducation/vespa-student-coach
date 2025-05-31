@@ -193,21 +193,72 @@ def student_coaching_data():
         if student_user_data:
             # field_70 in Object_3 is the email field.
             # Knack email fields when fetched as objects can be like: {'email': 'actual.email@example.com', 'label': 'actual.email@example.com'}
-            # Or the _raw version might sometimes just be the string.
-            email_data_raw = student_user_data.get('field_70_raw')
-            email_data = student_user_data.get('field_70')
+            # Or the _raw version might sometimes just be the string, or an HTML string as observed.
+            raw_val_field70 = student_user_data.get('field_70_raw') # Knack raw value
+            obj_val_field70 = student_user_data.get('field_70') # Knack object value
 
-            if isinstance(email_data_raw, str) and '@' in email_data_raw:
-                student_email = email_data_raw.strip()
-            elif isinstance(email_data, dict) and 'email' in email_data:
-                student_email = email_data['email'].strip()
-            elif isinstance(email_data, str) and '@' in email_data: # Fallback if field_70 is just a string
-                student_email = email_data.strip()
+            # Priority 1: Try to get email from field_70 if it's a Knack email object
+            if isinstance(obj_val_field70, dict) and 'email' in obj_val_field70 and isinstance(obj_val_field70['email'], str):
+                student_email = obj_val_field70['email'].strip()
+            # Priority 2: Try to get email from field_70_raw if it's a Knack email object (less common for _raw to be object)
+            elif isinstance(raw_val_field70, dict) and 'email' in raw_val_field70 and isinstance(raw_val_field70['email'], str):
+                 student_email = raw_val_field70['email'].strip()
+            # Priority 3: If field_70_raw is a string (as suggested by logs)
+            elif isinstance(raw_val_field70, str):
+                temp_email_str = raw_val_field70.strip()
+                # Check if it's an HTML string like <a href="mailto:email@example.com">text</a>
+                if temp_email_str.lower().startswith('<a') and 'mailto:' in temp_email_str.lower() and temp_email_str.lower().endswith('</a>'):
+                    try:
+                        # Extract from within mailto:"..." part of href
+                        mailto_keyword = 'mailto:'
+                        mailto_start_index = temp_email_str.lower().find(mailto_keyword) + len(mailto_keyword)
+                        
+                        # Find the end of the email address in href. It could be terminated by ", ', >.
+                        end_char_index = len(temp_email_str) 
+                        
+                        quote_index = temp_email_str.find('"', mailto_start_index)
+                        if quote_index != -1:
+                            end_char_index = min(end_char_index, quote_index)
+                        
+                        single_quote_index = temp_email_str.find("'", mailto_start_index)
+                        if single_quote_index != -1:
+                            end_char_index = min(end_char_index, single_quote_index)
+                            
+                        angle_bracket_index = temp_email_str.find('>', mailto_start_index)
+                        if angle_bracket_index != -1: # Should be present if parsing href part of <a> tag
+                            end_char_index = min(end_char_index, angle_bracket_index)
+
+                        extracted_from_href = temp_email_str[mailto_start_index:end_char_index].strip()
+                        
+                        if '@' in extracted_from_href and ' ' not in extracted_from_href and '<' not in extracted_from_href:
+                            student_email = extracted_from_href
+                        
+                        # Fallback: if mailto parsing didn't yield a good email, try getting link text
+                        if not student_email:
+                            text_start_actual_index = temp_email_str.find('>') 
+                            if text_start_actual_index != -1:
+                                text_start_actual_index +=1 # move past '>'
+                                text_end_index = temp_email_str.lower().rfind('</a>') # Use rfind for last occurrence
+                                if text_end_index > text_start_actual_index :
+                                    extracted_text = temp_email_str[text_start_actual_index:text_end_index].strip()
+                                    if '@' in extracted_text and ' ' not in extracted_text and '<' not in extracted_text:
+                                        student_email = extracted_text
+                                        app.logger.info(f"Used email from link text: {student_email}")
+
+                    except Exception as e_parse:
+                        app.logger.warning(f"Error parsing specific HTML email string '{temp_email_str}': {e_parse}")
+                # If it's just a plain email string (no HTML detected or parsing failed)
+                elif '@' in temp_email_str and not '<' in temp_email_str:
+                    student_email = temp_email_str
+            # Priority 4: Fallback to field_70 if it's a plain string and others failed
+            elif isinstance(obj_val_field70, str) and '@' in obj_val_field70 and not '<' in obj_val_field70 :
+                 student_email = obj_val_field70.strip()
             
             if student_email:
                 app.logger.info(f"Extracted student email: {student_email} for Object_3 ID {student_object3_id}")
             else:
-                app.logger.warning(f"Could not extract plain email from Object_3 field_70 for ID {student_object3_id}. Raw: {email_data_raw}, Non-raw: {email_data}")
+                app.logger.warning(f"Could not extract plain email from Object_3 field_70 for ID {student_object3_id}. "
+                                   f"field_70_raw: '{raw_val_field70}', field_70: '{obj_val_field70}'")
 
             name_parts = student_user_data.get('field_66_raw') # Assuming field_66 is Name
             if name_parts and isinstance(name_parts, dict):
