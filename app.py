@@ -172,83 +172,109 @@ def get_score_profile_text(score_value):
 
 # --- NEW: Add comprehensive data processing functions ---
 
-def get_all_knack_records(object_key, filters=None, max_records=None):
-    """Fetches all records from a Knack object, handling pagination."""
+def get_all_knack_records(object_key, filters=None, max_pages=20):
+    """Fetches all records from a Knack object using pagination."""
     all_records = []
-    page = 1
-    rows_per_page = 1000  # Max allowed by Knack
-    
-    while True:
-        response = get_knack_record(object_key, filters=filters, page=page, rows_per_page=rows_per_page)
-        if not response or not response.get('records'):
+    current_page = 1
+    total_pages = 1
+
+    app.logger.info(f"Starting paginated fetch for {object_key} with filters: {filters}")
+
+    while current_page <= total_pages and current_page <= max_pages:
+        app.logger.info(f"Fetching page {current_page} for {object_key}...")
+        response_data = get_knack_record(object_key, filters=filters, page=current_page, rows_per_page=1000)
+        
+        if response_data and isinstance(response_data, dict):
+            records_on_page = response_data.get('records', [])
+            
+            if isinstance(records_on_page, list):
+                all_records.extend(records_on_page)
+                app.logger.info(f"Fetched {len(records_on_page)} records from page {current_page} for {object_key}. Total so far: {len(all_records)}.")
+            else:
+                app.logger.warning(f"'records' key in response_data for {object_key} page {current_page} is not a list. Type: {type(records_on_page)}. Stopping pagination.")
+                break
+            
+            new_total_pages = response_data.get('total_pages')
+            if new_total_pages is not None:
+                try:
+                    total_pages = int(new_total_pages)
+                    if current_page == 1:
+                        app.logger.info(f"Total pages for {object_key} identified from API: {total_pages}")
+                except (ValueError, TypeError):
+                    app.logger.warning(f"Could not parse 'total_pages' ('{new_total_pages}') from response for {object_key} on page {current_page}.")
+            
+            if not records_on_page or len(records_on_page) < 1000 or current_page >= total_pages:
+                app.logger.info(f"Last page likely reached for {object_key} on page {current_page}.")
+                break
+            current_page += 1
+        else:
+            app.logger.warning(f"No response_data or unexpected format on page {current_page} for {object_key}. Stopping pagination.")
             break
-        
-        all_records.extend(response['records'])
-        
-        if max_records and len(all_records) >= max_records:
-            all_records = all_records[:max_records]
-            break
-        
-        # Check if there are more pages
-        total_records = response.get('total_records', 0)
-        if len(all_records) >= total_records or page * rows_per_page >= total_records:
-            break
-        
-        page += 1
-    
+            
+    app.logger.info(f"Completed paginated fetch for {object_key}. Total records retrieved: {len(all_records)}.")
     return all_records
 
-def get_school_vespa_averages(school_name):
+def get_school_vespa_averages(school_id):
     """Calculate average VESPA scores for all students in a school."""
-    if not school_name:
-        app.logger.warning("No school name provided for VESPA averages.")
+    if not school_id:
+        app.logger.warning("get_school_vespa_averages called with no school_id.")
         return None
+
+    app.logger.info(f"Calculating school VESPA averages for school_id: {school_id}")
     
-    # Filter for students in the same school
-    filters = [{'field': 'field_568', 'operator': 'is', 'value': school_name}]
+    # Use the correct filter from tutor app - field_133 is the school connection
+    filters_primary = [{'field': 'field_133', 'operator': 'is', 'value': school_id}]
+    app.logger.info(f"Attempting to fetch all records for object_10 with primary filter: {filters_primary}")
     
-    # Get all Object_10 records for this school
-    all_students = get_all_knack_records("object_10", filters=filters)
+    all_student_records_for_school = get_all_knack_records("object_10", filters=filters_primary)
+
+    if not all_student_records_for_school:
+        app.logger.warning(f"No student records found for school_id {school_id} using primary filter (field_133). Trying fallback filter (field_133_raw).")
+        filters_fallback = [{'field': 'field_133_raw', 'operator': 'contains', 'value': school_id}]
+        app.logger.info(f"Attempting to fetch all records for object_10 with fallback filter: {filters_fallback}")
+        all_student_records_for_school = get_all_knack_records("object_10", filters=filters_fallback)
+        
+        if not all_student_records_for_school:
+            app.logger.error(f"Could not retrieve any student records for school_id: {school_id} using primary or fallback filters. Cannot calculate averages.")
+            return None
+        app.logger.info(f"Retrieved {len(all_student_records_for_school)} student records for school_id {school_id} using fallback filter (field_133_raw).")
+    else:
+        app.logger.info(f"Retrieved {len(all_student_records_for_school)} student records for school_id {school_id} using primary filter (field_133).")
     
-    if not all_students:
-        app.logger.warning(f"No students found for school: {school_name}")
-        return None
-    
-    # Initialize sums and counts for each VESPA element
-    vespa_sums = {"Vision": 0, "Effort": 0, "Systems": 0, "Practice": 0, "Attitude": 0}
-    vespa_counts = {"Vision": 0, "Effort": 0, "Systems": 0, "Practice": 0, "Attitude": 0}
-    
-    # Field mappings for VESPA scores
-    field_mappings = {
-        "Vision": "field_147",
-        "Effort": "field_148",
-        "Systems": "field_149",
-        "Practice": "field_150",
-        "Attitude": "field_151"
+    vespa_elements = {
+        "Vision": "field_147", "Effort": "field_148",
+        "Systems": "field_149", "Practice": "field_150",
+        "Attitude": "field_151", "Overall": "field_152",
     }
-    
-    # Calculate sums and counts
-    for student in all_students:
-        for element, field in field_mappings.items():
-            score = student.get(field)
-            if score is not None and score != "N/A":
+    sums = {key: 0 for key in vespa_elements}
+    counts = {key: 0 for key in vespa_elements}
+
+    # Now all_student_records_for_school is a flat list of student record dictionaries
+    for record in all_student_records_for_school:
+        # Ensure record is a dictionary before trying to .get() from it
+        if not isinstance(record, dict):
+            app.logger.warning(f"Skipping an item in all_student_records_for_school because it is not a dictionary: {type(record)} - Content: {str(record)[:100]}...")
+            continue
+            
+        for element_name, field_key in vespa_elements.items():
+            score_value = record.get(field_key)
+            if score_value is not None:
                 try:
-                    score_float = float(score)
-                    vespa_sums[element] += score_float
-                    vespa_counts[element] += 1
+                    score = float(score_value)
+                    sums[element_name] += score
+                    counts[element_name] += 1
                 except (ValueError, TypeError):
-                    continue
+                    app.logger.debug(f"Could not convert score '{score_value}' for {element_name} in record {record.get('id', 'N/A')} to float.")
     
-    # Calculate averages
-    vespa_averages = {}
-    for element in vespa_sums:
-        if vespa_counts[element] > 0:
-            vespa_averages[element] = round(vespa_sums[element] / vespa_counts[element], 1)
+    averages = {}
+    for element_name in vespa_elements:
+        if counts[element_name] > 0:
+            averages[element_name] = round(sums[element_name] / counts[element_name], 2)
         else:
-            vespa_averages[element] = "N/A"
+            averages[element_name] = 0
     
-    app.logger.info(f"Calculated VESPA averages for {school_name}: {vespa_averages}")
-    return vespa_averages
+    app.logger.info(f"Calculated school VESPA averages for school_id {school_id}: {averages}")
+    return averages
 
 def normalize_qualification_type(exam_type_str):
     """Normalize qualification type strings to standard format."""
@@ -587,7 +613,7 @@ def student_coaching_data():
         current_cycle = 0
         vespa_scores_for_profile = {}
         student_reflections = {}
-        school_name = None
+        school_id = None
         school_vespa_averages = None
         
         if object10_data:
@@ -596,8 +622,23 @@ def student_coaching_data():
             current_cycle = int(str(current_cycle_str)) if str(current_cycle_str).isdigit() else 0
             app.logger.info(f"Student's current cycle from Object_10: {current_cycle}")
             
-            # Get school name for averages calculation
-            school_name = object10_data.get("field_568_raw", object10_data.get("field_568"))
+            # Get school ID for averages calculation (from tutor app.py)
+            school_id = None
+            school_connection_raw = object10_data.get("field_133_raw")
+            if isinstance(school_connection_raw, list) and school_connection_raw:
+                school_id = school_connection_raw[0].get('id')
+                app.logger.info(f"Extracted school_id '{school_id}' from student's Object_10 field_133_raw (list).")
+            elif isinstance(school_connection_raw, str):
+                school_id = school_connection_raw
+                app.logger.info(f"Extracted school_id '{school_id}' (string) from student's Object_10 field_133_raw.")
+            else:
+                # Attempt to get from non-raw field if raw is not helpful
+                school_connection_obj = object10_data.get("field_133")
+                if isinstance(school_connection_obj, list) and school_connection_obj:
+                    school_id = school_connection_obj[0].get('id')
+                    app.logger.info(f"Extracted school_id '{school_id}' from student's Object_10 field_133 (non-raw object).")
+                else:
+                    app.logger.warning(f"Could not determine school_id from field_133_raw or field_133. Data (raw): {school_connection_raw}, Data (obj): {school_connection_obj}")
             
             vespa_scores_for_profile = {
                 "Vision": {"score_1_to_10": object10_data.get("field_147"), "score_profile_text": get_score_profile_text(object10_data.get("field_147"))},
@@ -612,8 +653,15 @@ def student_coaching_data():
             }
             
             # Calculate school VESPA averages
-            if school_name:
-                school_vespa_averages = get_school_vespa_averages(school_name)
+            school_vespa_averages = None
+            if school_id:
+                school_vespa_averages = get_school_vespa_averages(school_id)
+                if school_vespa_averages:
+                    app.logger.info(f"Successfully retrieved school-wide VESPA averages for school {school_id}: {school_vespa_averages}")
+                else:
+                    app.logger.warning(f"Failed to retrieve school-wide VESPA averages for school {school_id}.")
+            else:
+                app.logger.warning("Cannot fetch school-wide VESPA averages as school_id is unknown.")
         else:
             app.logger.warning(f"No Object_10 data for student {student_name_from_obj3} (Email: {student_email})")
             # Populate with N/A or defaults if Object_10 is missing
