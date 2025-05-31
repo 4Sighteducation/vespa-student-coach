@@ -275,7 +275,8 @@ def student_coaching_data():
         student_reflections = {}
         if object10_data:
             current_cycle_str = object10_data.get("field_146_raw", "0")
-            current_cycle = int(current_cycle_str) if current_cycle_str.isdigit() else 0
+            # Ensure current_cycle_str is treated as a string before isdigit()
+            current_cycle = int(str(current_cycle_str)) if str(current_cycle_str).isdigit() else 0
             app.logger.info(f"Student's current cycle from Object_10: {current_cycle}")
             vespa_scores_for_profile = {
                 "Vision": {"score_1_to_10": object10_data.get("field_147"), "score_profile_text": get_score_profile_text(object10_data.get("field_147"))},
