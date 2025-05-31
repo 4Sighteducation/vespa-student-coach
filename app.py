@@ -191,7 +191,24 @@ def student_coaching_data():
         student_email = None
         student_name_from_obj3 = f"Student_{student_object3_id[:6]}" # Default
         if student_user_data:
-            student_email = student_user_data.get('field_70') # Email field from Object_3
+            # field_70 in Object_3 is the email field.
+            # Knack email fields when fetched as objects can be like: {'email': 'actual.email@example.com', 'label': 'actual.email@example.com'}
+            # Or the _raw version might sometimes just be the string.
+            email_data_raw = student_user_data.get('field_70_raw')
+            email_data = student_user_data.get('field_70')
+
+            if isinstance(email_data_raw, str) and '@' in email_data_raw:
+                student_email = email_data_raw.strip()
+            elif isinstance(email_data, dict) and 'email' in email_data:
+                student_email = email_data['email'].strip()
+            elif isinstance(email_data, str) and '@' in email_data: # Fallback if field_70 is just a string
+                student_email = email_data.strip()
+            
+            if student_email:
+                app.logger.info(f"Extracted student email: {student_email} for Object_3 ID {student_object3_id}")
+            else:
+                app.logger.warning(f"Could not extract plain email from Object_3 field_70 for ID {student_object3_id}. Raw: {email_data_raw}, Non-raw: {email_data}")
+
             name_parts = student_user_data.get('field_66_raw') # Assuming field_66 is Name
             if name_parts and isinstance(name_parts, dict):
                 student_name_from_obj3 = name_parts.get('full', student_name_from_obj3)
