@@ -194,6 +194,22 @@ def get_student_object10_record(student_email):
     app.logger.warning(f"No Object_10 record found for email {student_email}.")
     return None
 
+def get_student_object29_questionnaire_data(object10_id, cycle_number):
+    "Fetches Object_29 (Questionnaire) data for a given Object_10 ID and cycle."
+    if not object10_id or cycle_number is None: return None
+    app.logger.info(f"Fetching Object_29 questionnaire data for Object_10 ID: {object10_id}, Cycle: {cycle_number}")
+    filters = [
+        {'field': 'field_792', 'operator': 'is', 'value': object10_id}, # Connection to Object_10
+        {'field': 'field_863_raw', 'operator': 'is', 'value': str(cycle_number)} # Cycle number
+    ]
+    response = get_knack_record("object_29", filters=filters)
+    if response and response.get('records'):
+        if len(response['records']) > 1:
+            app.logger.warning(f"Multiple Object_29 records found for Object_10 ID {object10_id}, cycle {cycle_number}. Using the first one.")
+        return response['records'][0] # Assuming one Object_29 per student per cycle
+    app.logger.warning(f"No Object_29 data found for Object_10 ID {object10_id}, Cycle {cycle_number}.")
+    return None
+
 # --- Ported Academic Profile Functions from tutorapp.py ---
 
 # Helper function to parse subjects from a given academic_profile_record (ported from tutorapp.py)
