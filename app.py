@@ -260,9 +260,33 @@ def student_coaching_data():
                 app.logger.warning(f"Could not extract plain email from Object_3 field_70 for ID {student_object3_id}. "
                                    f"field_70_raw: '{raw_val_field70}', field_70: '{obj_val_field70}'")
 
-            name_parts = student_user_data.get('field_66_raw') # Assuming field_66 is Name
-            if name_parts and isinstance(name_parts, dict):
-                student_name_from_obj3 = name_parts.get('full', student_name_from_obj3)
+            # Correctly get student name from field_69 (Name field in Object_3)
+            name_data_raw = student_user_data.get('field_69_raw')
+            name_data_obj = student_user_data.get('field_69')
+
+            if isinstance(name_data_raw, dict) and name_data_raw.get('full'):
+                student_name_from_obj3 = name_data_raw['full']
+            elif isinstance(name_data_obj, dict) and name_data_obj.get('full'):
+                student_name_from_obj3 = name_data_obj['full']
+            elif isinstance(name_data_raw, dict): # Fallback if 'full' isn't present but it's a dict
+                first = name_data_raw.get('first', '')
+                last = name_data_raw.get('last', '')
+                title = name_data_raw.get('title', '')
+                constructed_name = f"{title} {first} {last}".replace('  ', ' ').strip()
+                if constructed_name and constructed_name != title: # Ensure some name was actually built
+                    student_name_from_obj3 = constructed_name
+            elif isinstance(name_data_obj, dict): # Fallback for object version
+                first = name_data_obj.get('first', '')
+                last = name_data_obj.get('last', '')
+                title = name_data_obj.get('title', '')
+                constructed_name = f"{title} {first} {last}".replace('  ', ' ').strip()
+                if constructed_name and constructed_name != title:
+                    student_name_from_obj3 = constructed_name
+            # If it's a direct string (less common for Knack name fields but possible)
+            elif isinstance(name_data_raw, str) and name_data_raw.strip():
+                student_name_from_obj3 = name_data_raw.strip()
+            elif isinstance(name_data_obj, str) and name_data_obj.strip():
+                student_name_from_obj3 = name_data_obj.strip()
         else:
             app.logger.warning(f"Could not fetch Object_3 details for ID {student_object3_id}")
             # Return error or limited dummy if core student info fails
