@@ -1562,7 +1562,7 @@ def chat_turn():
                 for char_to_replace in ['?', '.', ',', '\'', '"', '!']:
                     cleaned_msg_for_kw = cleaned_msg_for_kw.replace(char_to_replace, '')
                 keywords = [word for word in cleaned_msg_for_kw.split() if word not in common_words and len(word) > 3]
-
+            
                 if keywords:
                     found_activities_text_for_prompt = []
                     processed_activity_ids_student_chat_fallback = set()
@@ -1589,7 +1589,7 @@ def chat_turn():
                                 )
                                 processed_activity_ids_student_chat_fallback.add(activity_data_for_llm['id'])
                                 activity_count_fallback +=1
-                    
+                
                     if found_activities_text_for_prompt:
                         rag_context_parts.append("\n--- Also Consider these Activities (based on your message keywords) ---")
                         rag_context_parts.extend(found_activities_text_for_prompt)
@@ -1710,13 +1710,13 @@ def chat_history():
         def get_datetime_from_knack_ts(ts_str):
             if not ts_str: return datetime.min
             try:
-                return datetime.strptime(ts_str, '%d/%m/%Y %H:%M:%S') 
+                return datetime.strptime(ts_str, '%d/%m/%Y %H:%M:%S')
             except ValueError:
                 try: 
                     return datetime.strptime(ts_str, '%m/%d/%Y %H:%M:%S')
                 except ValueError:
                     app.logger.warning(f"Could not parse Knack timestamp: {ts_str} with common formats. Using fallback for sorting.")
-                    return datetime.min
+                return datetime.min
 
         all_student_chat_records.sort(key=lambda r: get_datetime_from_knack_ts(r.get('field_3285')), reverse=True) # CORRECTED TIMESTAMP FIELD
 
@@ -1849,13 +1849,15 @@ def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student
     # field_3288: SessionID (Short Text) - NEW
 
     session_id = f"{student_obj3_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}" # Added time to session for more uniqueness
+    current_timestamp_knack_format = datetime.now().strftime('%d/%m/%Y %H:%M:%S') # Changed to DD/MM/YYYY HH:MM:SS
     
     payload = {
         "field_3283": [student_obj3_id], # Student Connection
         "field_3282": author,           # Author
         "field_3286": message_text[:10000], # Conversation Log
         "field_3287": "Yes" if is_liked else "No", # Liked
-        "field_3288": session_id        # Session ID
+        "field_3288": session_id,        # Session ID
+        "field_3285": current_timestamp_knack_format # Message Timestamp
     }
     # field_1285 (Timestamp) is assumed to be handled by Knack on record creation.
         
@@ -1934,4 +1936,4 @@ def chat_message_like_toggle():
 if __name__ == '__main__':
     # For local development. Heroku uses Procfile.
     port = int(os.environ.get('PORT', 5002)) # Use a different port than tutor coach if running locally
-    app.run(debug=True, port=port, host='0.0.0.0')
+    app.run(debug=True, port=port, host='0.0.0.0') 
