@@ -1166,9 +1166,9 @@ def student_coaching_data():
                     try:
                         score = int(raw_score)
                         all_scored_statements.append({
-                            "question_text": q_detail.get('questionText', 'Unknown Question'),
+                            "text": q_detail.get('questionText', 'Unknown Question'), # Changed key to 'text'
                             "score": score,
-                            "category": q_detail.get('vespaCategory', 'N/A') # Changed key to 'category'
+                            "category": q_detail.get('vespaCategory', 'N/A')
                         })
                     except (ValueError, TypeError):
                         app.logger.debug(f"Could not parse score '{raw_score}' for {field_id} in Object_29.")
