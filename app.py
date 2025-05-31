@@ -1877,7 +1877,7 @@ def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student
         app.logger.info(f"Chat message saved successfully to Knack (object_119). Record ID: {response_data.get('id')}")
         return response_data.get('id')
     except requests.exceptions.HTTPError as e:
-        app.logger.error(f"HTTP error saving chat message to object_119: {e}. Response: {response.content if response else 'No response object'}")
+        app.logger.error(f"HTTP error saving chat message to object_119: {e}. Status: {response.status_code if response else 'N/A'}. Text: {response.text if response else 'No response object'}")
     except requests.exceptions.RequestException as e:
         app.logger.error(f"Request exception saving chat message to object_119: {e}")
     except json.JSONDecodeError:
