@@ -1431,8 +1431,8 @@ def chat_turn():
         if initial_ai_context:
             if initial_ai_context.get('student_name'):
                 student_name_for_chat = initial_ai_context['student_name'].split(' ')[0]
-            student_vespa_profile = initial_ai_context.get('vespa_profile', {}) # e.g., {"Vision": {"score_1_to_10": "7", "score_profile_text": "Medium"}, ...}
-            student_level_raw_from_context = initial_ai_context.get('student_level', "N/A") # This is field_568_raw
+            student_vespa_profile = initial_ai_context.get('vespa_profile', {}) 
+            student_level_raw_from_context = initial_ai_context.get('student_level', "N/A") 
             student_educational_level_kb = get_student_educational_level(student_level_raw_from_context)
             app.logger.info(f"Chat Turn: Student Name: {student_name_for_chat}, Mapped Edu Level for KB: {student_educational_level_kb}")
 
@@ -1440,6 +1440,7 @@ def chat_turn():
         rag_context_parts = ["--- Context for My VESPA AI Coach ---"]
         suggested_activities_for_response = []
         chosen_coaching_questions_for_llm = []
+        inferred_vespa_element_from_query = None
         
         # 1. Add student's data summary to RAG
         if initial_ai_context:
@@ -1454,9 +1455,25 @@ def chat_turn():
             if initial_ai_context.get('llm_generated_insights', {}).get('suggested_student_goals'):
                  rag_context_parts.append(f"Some goals suggested for me earlier: {'; '.join(initial_ai_context['llm_generated_insights']['suggested_student_goals'])}")
 
-        # 2. Determine if it's a "Focus Area" request
+        # 2. Determine if it's a "Focus Area" request or infer VESPA element from query
         is_focus_area_query = "what area to focus on" in current_user_message.lower() or "focus area" in current_user_message.lower()
 
+        if not is_focus_area_query:
+            # Try to infer VESPA element from keywords in the user's message
+            query_lower = current_user_message.lower()
+            keyword_to_element_map = {
+                ("vision", "goal", "future", "career", "motivation", "purpose"): "Vision",
+                ("effort", "hard work", "procrastination", "trying", "persevere"): "Effort",
+                ("systems", "organization", "plan", "notes", "timetable", "deadline"): "Systems",
+                ("practice", "revision", "revise", "exam prep", "test myself", "study"): "Practice",
+                ("attitude", "mindset", "stress", "pressure", "confidence", "difficult"): "Attitude"
+            }
+            for keywords_tuple, element_name in keyword_to_element_map.items():
+                if any(kw in query_lower for kw in keywords_tuple):
+                    inferred_vespa_element_from_query = element_name
+                    app.logger.info(f"Inferred VESPA element '{inferred_vespa_element_from_query}' from user query.")
+                    break
+        
         # 3. RAG based on KBs
         if coaching_kb and VESPA_ACTIVITIES_DATA:
             app.logger.info(f"Processing RAG with Coaching KB and Activities KB. Student Edu Level: {student_educational_level_kb}")
@@ -1493,14 +1510,13 @@ def chat_turn():
                     target_vespa_element_for_rag = lowest_element
                     target_score_category_for_rag = student_vespa_profile[lowest_element].get('score_profile_text', 'N/A')
                     rag_context_parts.append(f"\nStudent seems to want to focus on an area. Their lowest VESPA element is '{target_vespa_element_for_rag}' with a score profile of '{target_score_category_for_rag}'.")
+            elif inferred_vespa_element_from_query: # Use the element inferred from keywords
+                target_vespa_element_for_rag = inferred_vespa_element_from_query
+                target_score_category_for_rag = student_vespa_profile.get(target_vespa_element_for_rag, {}).get('score_profile_text', 'N/A')
+                app.logger.info(f"Using inferred VESPA element '{target_vespa_element_for_rag}' for RAG. Score profile: '{target_score_category_for_rag}'.")
             else:
-                # Simple keyword matching for VESPA elements in the user's message
-                for vespa_el_kb_key in coaching_kb.get('vespaSpecificCoachingQuestionsWithActivities', {}).keys(): # "Vision", "Effort", etc.
-                    if vespa_el_kb_key.lower() in current_user_message.lower():
-                        target_vespa_element_for_rag = vespa_el_kb_key
-                        target_score_category_for_rag = student_vespa_profile.get(target_vespa_element_for_rag, {}).get('score_profile_text', 'N/A')
-                        app.logger.info(f"User message mentioned '{target_vespa_element_for_rag}'. Score profile: '{target_score_category_for_rag}'.")
-                        break
+                # Fallback: if no specific element, still allow general keyword search for activities later
+                app.logger.info("No specific VESPA element identified for targeted RAG. Will rely on general keyword search for activities if applicable.")
             
             # c. Retrieve Specific Coaching Questions and Activities
             if target_vespa_element_for_rag and target_score_category_for_rag and target_score_category_for_rag != "N/A":
@@ -1541,7 +1557,7 @@ def chat_turn():
 
             # d. Fallback: General keyword search for activities if specific KB RAG didn't yield much
             if not suggested_activities_for_response and not is_focus_area_query: # Only if not already found via specific RAG & not focus query
-                common_words = {"is", "a", "the", "and", "to", "of", "it", "in", "for", "on", "with", "as", "an", "at", "by", "my", "i", "me", "what", "how", "help", "can", "you"}
+                common_words = {"is", "a", "the", "and", "to", "of", "it", "in", "for", "on", "with", "as", "an", "at", "by", "my", "i", "me", "what", "how", "help", "can", "some", "this", "that", "area", "areas", "score", "scores"}
                 cleaned_msg_for_kw = current_user_message.lower()
                 for char_to_replace in ['?', '.', ',', '\'', '"', '!']:
                     cleaned_msg_for_kw = cleaned_msg_for_kw.replace(char_to_replace, '')
@@ -1583,13 +1599,19 @@ def chat_turn():
         system_prompt_content = f"""You are 'My VESPA AI Coach', a friendly and supportive AI assistant for students.
         You are chatting with {student_name_for_chat}. Your goal is to help them understand their VESPA profile, academic data, and questionnaire responses, and to support their development.
         Use encouraging language. Be clear and concise.
-        If the student asks about a specific VESPA element or a challenge, or if the context suggests a focus area (like their lowest VESPA score), try to provide actionable advice.
-        If the RAG context provides specific coaching questions, consider asking one of them if it fits the conversation.
-        If the RAG context suggests relevant VESPA activities:
-        - Explain WHY it's relevant to what the student is asking or to their data.
-        - Briefly describe WHAT the activity involves in a student-friendly way using its summary.
-        - If a PDF link is mentioned for an activity in the RAG context, you can say "There are resources available for this activity."
-        - Only recommend activities that are explicitly provided to you in the '--- Suggested Activities ---' or '--- Also Consider these Activities ---' sections of the RAG context. Use the activity's 'name' when referring to it.
+        
+        When the student asks for help, or if the RAG context suggests a focus (like their lowest VESPA score or an inferred element from their query):
+        1. Try to identify the most relevant VESPA element for their query or situation.
+        2. If the RAG context provides specific coaching questions for that element, consider asking one if it fits naturally into the conversation to help them reflect.
+        3. If the RAG context suggests relevant VESPA activities for that element (check the 'VESPA Element' field of the activity against your inferred element):
+            - Explain WHY it's relevant to what the student is asking or to their data and the inferred VESPA element.
+            - Briefly describe WHAT the activity involves in a student-friendly way using its summary.
+            - If a PDF link is mentioned, you can say "There are resources available for this activity."
+            - Only recommend activities that are explicitly provided to you in the '--- Suggested Activities ---' or '--- Also Consider these Activities ---' sections of the RAG context. Use the activity's 'name' when referring to it.
+            - If multiple activities are suggested for an element, pick the one that seems most aligned with the student's specific phrasing or implied need.
+
+        If the student's query is ambiguous, or if you're unsure which VESPA element or type of activity would be most helpful, ask a clarifying question before suggesting a specific activity. 
+        For example, if they say 'I'm struggling,' you could ask, 'Can you tell me a bit more about what you're finding most challenging right now? Is it staying motivated, organizing your work, or something else?'
         
         If no specific RAG questions or activities are provided, or if the student's query is general, offer supportive advice and reflections based on their data summary and general coaching principles.
         Keep your responses focused on the student's query and their data.
@@ -1649,25 +1671,22 @@ def chat_history():
     
     if request.method == 'POST':
         data = request.get_json()
-        student_object3_id = data.get('student_knack_id') # student_knack_id is Object_3 ID
-        max_messages = data.get('max_messages', 50) # Default to 50
-        initial_ai_context = data.get('initial_ai_context') # Get the initial AI context
+        student_object3_id = data.get('student_knack_id') 
+        max_messages = data.get('max_messages', 50) 
+        initial_ai_context = data.get('initial_ai_context')
 
         if not student_object3_id:
             app.logger.error("get_chat_history: Missing student_knack_id (Object_3 ID).")
             return jsonify({"error": "Missing student_knack_id"}), 400
 
-        knack_object_key_chatlog = "object_118"
-        # We need to filter by field_3274 (Student connection to Object_3)
+        knack_object_key_chatlog = "object_119"
+        # Filter by field_3283 (Student connection to Object_3 in object_119)
         filters = [
-            {'field': 'field_3274', 'operator': 'is', 'value': student_object3_id}
+            {'field': 'field_3283', 'operator': 'is', 'value': student_object3_id}
         ]
         
         app.logger.info(f"Fetching chat history for student Obj3 ID {student_object3_id} from {knack_object_key_chatlog} with filters: {filters}")
         
-        # Fetch all chat records for this student, up to a reasonable limit to sort then slice
-        # Knack's API limit is 1000 per page.
-        # Let's fetch up to max_messages * 2 (or 100 if max_messages is small) to allow for sorting.
         rows_to_fetch = max(100, max_messages * 2)
         if rows_to_fetch > 1000: rows_to_fetch = 1000
 
@@ -1681,57 +1700,57 @@ def chat_history():
         all_student_chat_records = []
         if chat_log_response and isinstance(chat_log_response, dict) and 'records' in chat_log_response:
             all_student_chat_records = chat_log_response['records']
-            app.logger.info(f"Fetched initial {len(all_student_chat_records)} chat records for student {student_object3_id}.")
+            app.logger.info(f"Fetched initial {len(all_student_chat_records)} chat records for student {student_object3_id} from {knack_object_key_chatlog}.")
         else:
-            app.logger.warning(f"No chat records found or unexpected response format for student {student_object3_id}. Response: {chat_log_response}")
+            app.logger.warning(f"No chat records found or unexpected response format for student {student_object3_id} from {knack_object_key_chatlog}. Response: {chat_log_response}")
             return jsonify({"chat_history": [], "total_count": 0, "liked_count": 0, "summary": "No chat history found for you yet."}), 200
 
-        # Sort records by timestamp (field_3276) - Knack format is 'dd/mm/yyyy HH:MM:SS'
+        # Sort records by timestamp (field_1285 in object_119 - CONFIRM THIS IS STILL CORRECT)
         def get_datetime_from_knack_ts(ts_str):
             if not ts_str: return datetime.min
             try:
-                return datetime.strptime(ts_str, '%d/%m/%Y %H:%M:%S')
+                return datetime.strptime(ts_str, '%d/%m/%Y %H:%M:%S') 
             except ValueError:
-                app.logger.warning(f"Could not parse Knack timestamp: {ts_str}. Using fallback for sorting.")
-                return datetime.min
+                try: 
+                    return datetime.strptime(ts_str, '%m/%d/%Y %H:%M:%S')
+                except ValueError:
+                    app.logger.warning(f"Could not parse Knack timestamp: {ts_str} with common formats. Using fallback for sorting.")
+                    return datetime.min
 
-        all_student_chat_records.sort(key=lambda r: get_datetime_from_knack_ts(r.get('field_3276')), reverse=True)
+        all_student_chat_records.sort(key=lambda r: get_datetime_from_knack_ts(r.get('field_3285')), reverse=True) # CORRECTED TIMESTAMP FIELD
 
-        # Slice to get the actual max_messages
         recent_chat_records = all_student_chat_records[:max_messages]
         
         chat_history_for_frontend = []
-        liked_count = 0 # Placeholder, 'liked' status not fully implemented in student chat UI/backend yet
+        liked_count = 0 
         for record in recent_chat_records:
-            # Determine role based on field_3273 (Author)
-            author = record.get('field_3273', 'Student') # Default to student if author missing
+            author = record.get('field_3282', 'Student') # Author from field_3282
             role_for_frontend = "assistant" if author == "My AI Coach" else "user"
+            is_liked_val = record.get('field_3287') == "Yes" # Liked status from field_3287
+            if is_liked_val:
+                liked_count +=1
 
             chat_history_for_frontend.append({
                 "id": record.get('id'),
                 "role": role_for_frontend,
-                "content": record.get('field_3277', ""), # Message Text
-                "is_liked": record.get('field_3279') == "Yes", # Liked status from field_3279
-                "timestamp": record.get('field_3276')
+                "content": record.get('field_3286', ""), # Message Text from field_3286
+                "is_liked": is_liked_val, 
+                "timestamp": record.get('field_3285') # CORRECTED TIMESTAMP FIELD
             })
         
-        # Reverse to have chronological order for display (oldest of the recent batch first)
         chat_history_for_frontend.reverse()
+        total_chat_count_for_student = len(all_student_chat_records) 
 
-        total_chat_count_for_student = len(all_student_chat_records) # Count before slicing
-
-        # Placeholder for summary, can be enhanced later
         summary_text = f"You have {total_chat_count_for_student} messages in your chat history."
         if initial_ai_context and initial_ai_context.get('llm_generated_insights', {}).get('student_overview_summary'):
             summary_text = initial_ai_context['llm_generated_insights']['student_overview_summary']
 
-
-        app.logger.info(f"Returning {len(chat_history_for_frontend)} messages for student chat history. Total for student: {total_chat_count_for_student}.")
+        app.logger.info(f"Returning {len(chat_history_for_frontend)} messages for student chat history. Total for student: {total_chat_count_for_student}. Liked count: {liked_count}")
         return jsonify({
             "chat_history": chat_history_for_frontend,
             "total_count": total_chat_count_for_student,
-            "liked_count": liked_count, # Placeholder
-            "summary": summary_text # Placeholder
+            "liked_count": liked_count, 
+            "summary": summary_text
         }), 200
 
 
@@ -1809,7 +1828,8 @@ if not psychometric_question_details_kb: app.logger.warning("Psychometric Questi
 if not report_text_kb: app.logger.warning("Report Text KB (Object_33) failed to load.")
 
 
-# --- Save Chat Message to Knack (Object_118) ---
+# --- Save Chat Message to Knack (Object_118) --- # Docstring needs update
+# UPDATED to save to Object_119
 def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student_chat=False, ai_message_id_if_replying_to_tutor=None, is_liked=False):
     if not KNACK_APP_ID or not KNACK_API_KEY:
         app.logger.error("Knack App ID or API Key is missing for save_chat_message_to_knack.")
@@ -1819,28 +1839,24 @@ def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student
         app.logger.error("save_chat_message_to_knack: student_obj3_id is required.")
         return None
 
-    # Object_118 is the "AI Chat Log"
-    # field_3274: Connection to Student (Object_3) - CRITICAL
-    # field_3273: Author (Text - "Student", "Tutor AI", "My AI Coach")
-    # field_3277: Message Text (Paragraph Text)
-    # field_3276: Timestamp (Date/Time - Knack usually handles this on creation if field type is set)
-    # field_3278: AI Message ID it's a reply to (Text - mainly for tutor replies to student)
-    # field_3279: Liked (Yes/No - "Yes" or "No")
-    # field_3280: Session ID (Text - can be student_obj3_id + current date for grouping)
+    # Object_119 is the "AIChatLog" for students
+    # field_3283: Student (Connection to Object_3)
+    # field_3282: Author (Short Text)
+    # field_3286: Conversation Log (Paragraph Text)
+    # field_1285: Message Timestamp (Date/Time - Knack handles this - CONFIRM IF STILL THIS FIELD FOR TIMESTAMP)
+    # field_3287: Liked (Yes/No)
+    # field_3288: SessionID (Short Text) - NEW
 
-    session_id = f"{student_obj3_id}_{datetime.now().strftime('%Y%m%d')}"
+    session_id = f"{student_obj3_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}" # Added time to session for more uniqueness
     
     payload = {
-        "field_3274": student_obj3_id, # Connects to the student's Object_3 record
-        "field_3273": author,
-        "field_3277": message_text[:10000], # Knack paragraph text fields might have limits
-        "field_3279": "Yes" if is_liked else "No",
-        "field_3280": session_id 
+        "field_3283": [student_obj3_id], # Student Connection
+        "field_3282": author,           # Author
+        "field_3286": message_text[:10000], # Conversation Log
+        "field_3287": "Yes" if is_liked else "No", # Liked
+        "field_3288": session_id        # Session ID
     }
-
-    # If this message is from the AI replying to a tutor's message (less relevant for pure student chat)
-    if ai_message_id_if_replying_to_tutor:
-        payload["field_3278"] = ai_message_id_if_replying_to_tutor
+    # field_1285 (Timestamp) is assumed to be handled by Knack on record creation.
         
     headers = {
         'X-Knack-Application-Id': KNACK_APP_ID,
@@ -1848,23 +1864,71 @@ def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student
         'Content-Type': 'application/json'
     }
     
-    url = f"{KNACK_API_BASE_URL}/object_118/records"
-    app.logger.info(f"Saving chat message to Knack: URL={url}, Payload Author='{author}', StudentObj3ID='{student_obj3_id}'")
+    url = f"{KNACK_API_BASE_URL}/object_119/records"
+    app.logger.info(f"Saving chat message to Knack ({url}): Payload Author='{author}', StudentObj3ID='{student_obj3_id}', SessionID='{session_id}'")
 
     try:
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
         response_data = response.json()
-        app.logger.info(f"Chat message saved successfully to Knack. Record ID: {response_data.get('id')}")
+        app.logger.info(f"Chat message saved successfully to Knack (object_119). Record ID: {response_data.get('id')}")
         return response_data.get('id')
     except requests.exceptions.HTTPError as e:
-        app.logger.error(f"HTTP error saving chat message: {e}. Response: {response.content if response else 'No response object'}")
+        app.logger.error(f"HTTP error saving chat message to object_119: {e}. Response: {response.content if response else 'No response object'}")
     except requests.exceptions.RequestException as e:
-        app.logger.error(f"Request exception saving chat message: {e}")
+        app.logger.error(f"Request exception saving chat message to object_119: {e}")
     except json.JSONDecodeError:
-        app.logger.error(f"JSON decode error for Knack save chat response. Response text: {response.text if response else 'No response object'}")
+        app.logger.error(f"JSON decode error for Knack save chat (object_119) response. Response text: {response.text if response else 'No response object'}")
     return None
 
+# --- NEW ENDPOINT FOR LIKING/UNLIKING A CHAT MESSAGE ---
+@app.route('/api/v1/chat_message_like_toggle', methods=['POST', 'OPTIONS'])
+def chat_message_like_toggle():
+    app.logger.info(f"Received request for /api/v1/chat_message_like_toggle. Method: {request.method}")
+    if request.method == 'OPTIONS':
+        return _build_cors_preflight_response()
+
+    if request.method == 'POST':
+        data = request.get_json()
+        message_knack_id = data.get('message_knack_id')
+        like_status = data.get('like_status') # Expected to be boolean true for like, false for unlike
+
+        if not message_knack_id or like_status is None:
+            app.logger.error("chat_message_like_toggle: Missing message_knack_id or like_status.")
+            return jsonify({"error": "Missing message_knack_id or like_status"}), 400
+
+        if not KNACK_APP_ID or not KNACK_API_KEY:
+            app.logger.error("Knack App ID or API Key is missing for chat_message_like_toggle.")
+            return jsonify({"error": "Knack API credentials not configured"}), 500
+
+        knack_object_key_chatlog = "object_119" 
+        payload = {
+            "field_3287": "Yes" if like_status else "No" # Corrected Liked field for object_119
+        }
+        
+        headers = {
+            'X-Knack-Application-Id': KNACK_APP_ID,
+            'X-Knack-REST-API-Key': KNACK_API_KEY,
+            'Content-Type': 'application/json'
+        }
+        
+        url = f"{KNACK_API_BASE_URL}/{knack_object_key_chatlog}/records/{message_knack_id}"
+        app.logger.info(f"Updating like status for message {message_knack_id} in {knack_object_key_chatlog} to {payload['field_3287']}. URL: {url}")
+
+        try:
+            response = requests.put(url, headers=headers, json=payload)
+            response.raise_for_status()
+            app.logger.info(f"Successfully updated like status for message {message_knack_id}.")
+            return jsonify({"success": True, "message_id": message_knack_id, "liked": like_status}), 200
+        except requests.exceptions.HTTPError as e:
+            app.logger.error(f"HTTP error updating like status for message {message_knack_id}: {e}. Response: {response.content if response else 'No response object'}")
+            return jsonify({"error": f"Failed to update like status: {e}"}), 500
+        except requests.exceptions.RequestException as e:
+            app.logger.error(f"Request exception updating like status for message {message_knack_id}: {e}")
+            return jsonify({"error": f"Failed to update like status: {e}"}), 500
+        except json.JSONDecodeError:
+            app.logger.error(f"JSON decode error for Knack update like status response. Response text: {response.text if response else 'No response object'}")
+            return jsonify({"error": "Failed to parse Knack response after updating like status"}), 500
 
 if __name__ == '__main__':
     # For local development. Heroku uses Procfile.
