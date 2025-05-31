@@ -1456,13 +1456,68 @@ def chat_turn():
         student_email_for_chat_log = None
 
         if initial_ai_context:
-            if initial_ai_context.get('student_name'):
-                student_name_for_chat = initial_ai_context['student_name'].split(' ')[0]
+            student_name_for_chat = initial_ai_context.get('student_name', "there").split(' ')[0]
             student_vespa_profile = initial_ai_context.get('vespa_profile', {}) 
             student_level_raw_from_context = initial_ai_context.get('student_level', "N/A") 
             student_educational_level_kb = get_student_educational_level(student_level_raw_from_context)
-            student_email_for_chat_log = initial_ai_context.get('student_email') # Get email from context
-            app.logger.info(f"Chat Turn: Student Name: {student_name_for_chat}, Mapped Edu Level for KB: {student_educational_level_kb}, Student Email from context: {student_email_for_chat_log}")
+            
+            # Attempt to get student_email directly
+            student_email_for_chat_log = initial_ai_context.get('student_email')
+            
+            # Fallback: If email not direct, try to get from object10_data in context
+            if not student_email_for_chat_log:
+                app.logger.warning("chat_turn: student_email missing from direct initial_ai_context. Attempting fallback from object10_data.")
+                object10_data_from_context = initial_ai_context.get('object10_data') # Assuming object10_data is passed in initial_ai_context by frontend
+                if object10_data_from_context and isinstance(object10_data_from_context, dict):
+                    # Try to get email from field_197 (student email in Object_10)
+                    # This logic mirrors parts of get_student_user_details's email extraction but for field_197
+                    raw_val_field197 = object10_data_from_context.get('field_197_raw')
+                    obj_val_field197 = object10_data_from_context.get('field_197')
+
+                    if isinstance(obj_val_field197, dict) and 'email' in obj_val_field197 and isinstance(obj_val_field197['email'], str):
+                        student_email_for_chat_log = obj_val_field197['email'].strip()
+                    elif isinstance(raw_val_field197, dict) and 'email' in raw_val_field197 and isinstance(raw_val_field197['email'], str):
+                        student_email_for_chat_log = raw_val_field197['email'].strip()
+                    elif isinstance(raw_val_field197, str):
+                        temp_email_str = raw_val_field197.strip()
+                        if temp_email_str.lower().startswith('<a') and 'mailto:' in temp_email_str.lower() and temp_email_str.lower().endswith('</a>'):
+                            try:
+                                mailto_keyword = 'mailto:'
+                                mailto_start_index = temp_email_str.lower().find(mailto_keyword) + len(mailto_keyword)
+                                end_char_index = len(temp_email_str)
+                                quote_index = temp_email_str.find('"', mailto_start_index)
+                                if quote_index != -1: end_char_index = min(end_char_index, quote_index)
+                                single_quote_index = temp_email_str.find("'", mailto_start_index)
+                                if single_quote_index != -1: end_char_index = min(end_char_index, single_quote_index)
+                                angle_bracket_index = temp_email_str.find('>', mailto_start_index)
+                                if angle_bracket_index != -1: end_char_index = min(end_char_index, angle_bracket_index)
+                                extracted_from_href = temp_email_str[mailto_start_index:end_char_index].strip()
+                                if '@' in extracted_from_href and ' ' not in extracted_from_href and '<' not in extracted_from_href:
+                                    student_email_for_chat_log = extracted_from_href
+                                if not student_email_for_chat_log: # Fallback to link text
+                                    text_start_actual_index = temp_email_str.find('>') 
+                                    if text_start_actual_index != -1:
+                                        text_start_actual_index +=1
+                                        text_end_index = temp_email_str.lower().rfind('</a>')
+                                        if text_end_index > text_start_actual_index :
+                                            extracted_text = temp_email_str[text_start_actual_index:text_end_index].strip()
+                                            if '@' in extracted_text and ' ' not in extracted_text and '<' not in extracted_text:
+                                                student_email_for_chat_log = extracted_text
+                            except Exception as e_parse_obj10_email:
+                                app.logger.warning(f"chat_turn: Error parsing HTML email string from Object_10 field_197_raw ('{temp_email_str}'): {e_parse_obj10_email}")
+                        elif '@' in temp_email_str and not '<' in temp_email_str:
+                            student_email_for_chat_log = temp_email_str
+                    elif isinstance(obj_val_field197, str) and '@' in obj_val_field197 and not '<' in obj_val_field197 :
+                        student_email_for_chat_log = obj_val_field197.strip()
+                    
+                    if student_email_for_chat_log:
+                        app.logger.info(f"chat_turn: Successfully extracted email '{student_email_for_chat_log}' from object10_data in context (field_197).")
+                    else:
+                        app.logger.error("chat_turn: Fallback failed. Could not extract valid email from object10_data's field_197/field_197_raw.")
+                else:
+                    app.logger.error("chat_turn: Fallback failed. object10_data not found or not a dict in initial_ai_context.")
+            
+            app.logger.info(f"Chat Turn: Student Name: {student_name_for_chat}, Mapped Edu Level for KB: {student_educational_level_kb}, Student Email for chat log: {student_email_for_chat_log}")
         else:
             app.logger.warning("chat_turn: initial_ai_context is missing. Student email for chat log will be unavailable.")
 
