@@ -1531,8 +1531,8 @@ def chat_turn():
             if vespa_statements_dict and isinstance(vespa_statements_dict, dict):
                 for vespa_element_key, element_data in vespa_statements_dict.items():
                     # Check if this element matches our target or user's message
-                    if (target_vespa_element_for_rag and vespa_element_key.lower() == target_vespa_element_for_rag.lower()) or \
-                       (not target_vespa_element_for_rag and any(kw in current_user_message.lower() for kw in [vespa_element_key.lower(), vespa_element_key[0].lower()])):
+                    if (inferred_vespa_element_from_query and vespa_element_key.lower() == inferred_vespa_element_from_query.lower()) or \
+                       (not inferred_vespa_element_from_query and any(kw in current_user_message.lower() for kw in [vespa_element_key.lower(), vespa_element_key[0].lower()])):
                         
                         statements_data = element_data.get('statements', [])
                         if statements_data and isinstance(statements_data, list):
@@ -1584,10 +1584,10 @@ def chat_turn():
                             relevance_score += 2
                     
                     # Check for VESPA element match
-                    if target_vespa_element_for_rag:
-                        if target_vespa_element_for_rag.lower() in insight_tags or \
-                           target_vespa_element_for_rag.lower() in insight_name or \
-                           target_vespa_element_for_rag.lower() in insight_summary:
+                    if inferred_vespa_element_from_query:
+                        if inferred_vespa_element_from_query.lower() in insight_tags or \
+                           inferred_vespa_element_from_query.lower() in insight_name or \
+                           inferred_vespa_element_from_query.lower() in insight_summary:
                             relevance_score += 3
                     
                     # Include insights with any relevance
