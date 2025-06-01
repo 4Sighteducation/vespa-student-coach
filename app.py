@@ -1501,11 +1501,11 @@ def chat_turn():
             # Try to infer VESPA element from keywords in the user's message
             query_lower = current_user_message.lower()
             keyword_to_element_map = {
-                ("vision", "goal", "future", "career", "motivation", "purpose"): "Vision",
-                ("effort", "hard work", "procrastination", "trying", "persevere"): "Effort",
-                ("systems", "organization", "plan", "notes", "timetable", "deadline"): "Systems",
-                ("practice", "revision", "revise", "exam prep", "test myself", "study"): "Practice",
-                ("attitude", "mindset", "stress", "pressure", "confidence", "difficult"): "Attitude"
+                ("vision", "goal", "future", "career", "motivation", "purpose", "direction", "aspiration", "dream", "ambition"): "Vision",
+                ("effort", "hard work", "procrastination", "trying", "persevere", "lazy", "energy", "work ethic", "dedication", "commitment"): "Effort",
+                ("systems", "organization", "plan", "notes", "timetable", "deadline", "homework", "complete", "time management", "schedule", "diary", "planner", "organised", "organize", "structure", "routine"): "Systems",
+                ("practice", "revision", "revise", "exam prep", "test myself", "study", "memory", "technique", "method", "preparation", "learning"): "Practice",
+                ("attitude", "mindset", "stress", "pressure", "confidence", "difficult", "anxiety", "worry", "belief", "resilience", "positive", "negative"): "Attitude"
             }
             for keywords_tuple, element_name in keyword_to_element_map.items():
                 if any(kw in query_lower for kw in keywords_tuple):
@@ -1575,7 +1575,7 @@ def chat_turn():
                     rag_context_parts.append(f"\n--- Suggested Activities for '{target_vespa_element_for_rag}' ---")
                     activity_count = 0
                     for act_id in retrieved_activity_ids:
-                        if activity_count >= 2: break # Limit to 2 activities
+                        if activity_count >= 3: break # Increased limit to 3 activities
                         activity_detail = next((act for act in VESPA_ACTIVITIES_DATA if act.get('id') == act_id), None)
                         if activity_detail:
                             activity_data_for_llm = {
@@ -1606,28 +1606,45 @@ def chat_turn():
                     found_activities_text_for_prompt = []
                     processed_activity_ids_student_chat_fallback = set()
                     activity_count_fallback = 0
+                    
+                    # Score activities based on keyword relevance
+                    scored_activities = []
                     for activity in VESPA_ACTIVITIES_DATA:
-                        if activity_count_fallback >= 1: break # Limit to 1 fallback activity
                         activity_text_to_search = (
                             str(activity.get('name', '')).lower() +
                             str(activity.get('short_summary', '')).lower() +
                             str(activity.get('vespa_element', '')).lower() +
                             " ".join(activity.get('keywords', [])).lower()
                         )
-                        if any(kw in activity_text_to_search for kw in keywords):
-                            if activity.get('id') not in processed_activity_ids_student_chat_fallback:
-                                activity_data_for_llm = {
-                                    "id": activity.get('id'), "name": activity.get('name'),
-                                    "short_summary": activity.get('short_summary'), "pdf_link": activity.get('pdf_link'),
-                                    "vespa_element": activity.get('vespa_element'), "level": activity.get('level')
-                                }
-                                suggested_activities_for_response.append(activity_data_for_llm)
-                                pdf_available_text = " (Resource PDF available)" if activity_data_for_llm['pdf_link'] and activity_data_for_llm['pdf_link'] != '#' else ""
-                                found_activities_text_for_prompt.append(
-                                    f"- Name: {activity_data_for_llm['name']}{pdf_available_text}. Summary: {activity_data_for_llm['short_summary'][:150]}..."
-                                )
-                                processed_activity_ids_student_chat_fallback.add(activity_data_for_llm['id'])
-                                activity_count_fallback +=1
+                        
+                        # Calculate relevance score
+                        relevance_score = sum(1 for kw in keywords if kw in activity_text_to_search)
+                        
+                        # Boost score if activity matches inferred VESPA element
+                        if inferred_vespa_element_from_query and activity.get('vespa_element', '').lower() == inferred_vespa_element_from_query.lower():
+                            relevance_score += 3
+                        
+                        if relevance_score > 0:
+                            scored_activities.append((relevance_score, activity))
+                    
+                    # Sort by relevance score (highest first)
+                    scored_activities.sort(key=lambda x: x[0], reverse=True)
+                    
+                    # Take top 2 most relevant activities
+                    for score, activity in scored_activities[:2]:
+                        if activity.get('id') not in processed_activity_ids_student_chat_fallback:
+                            activity_data_for_llm = {
+                                "id": activity.get('id'), "name": activity.get('name'),
+                                "short_summary": activity.get('short_summary'), "pdf_link": activity.get('pdf_link'),
+                                "vespa_element": activity.get('vespa_element'), "level": activity.get('level')
+                            }
+                            suggested_activities_for_response.append(activity_data_for_llm)
+                            pdf_available_text = " (Resource PDF available)" if activity_data_for_llm['pdf_link'] and activity_data_for_llm['pdf_link'] != '#' else ""
+                            found_activities_text_for_prompt.append(
+                                f"- Name: {activity_data_for_llm['name']}{pdf_available_text}. Summary: {activity_data_for_llm['short_summary'][:150]}..."
+                            )
+                            processed_activity_ids_student_chat_fallback.add(activity_data_for_llm['id'])
+                            activity_count_fallback += 1
                 
                     if found_activities_text_for_prompt:
                         rag_context_parts.append("\n--- Also Consider these Activities (based on your message keywords) ---")
@@ -1635,34 +1652,52 @@ def chat_turn():
                         app.logger.info(f"Student chat RAG: Added {len(found_activities_text_for_prompt)} fallback activities via keyword match.")
         
         # --- LLM Prompt Construction for Student Chat ---
-        system_prompt_content = f"""You are 'My VESPA AI Coach', a friendly and supportive AI assistant for students.
-        You are chatting with {student_name_for_chat}. Your goal is to help them understand their VESPA profile, academic data, and questionnaire responses, and to support their development.
-        Use encouraging language. Be clear and concise.
-        
-        When the student asks for help, or if the RAG context suggests a focus (like their lowest VESPA score or an inferred element from their query):
-        1. Try to identify the most relevant VESPA element for their query or situation.
-        2. If the RAG context provides specific coaching questions for that element, consider asking one if it fits naturally into the conversation to help them reflect.
-        3. After discussing their situation or asking a reflective question, if the RAG context suggests relevant VESPA activities for that element (check the 'VESPA Element' field of the activity against your inferred element), you can THEN ask the student something like: 'Would you be interested in an activity that could help with this?' or 'I have an activity in mind that might be useful for [their situation/inferred element], would you like to hear about it?'
-        4. If they say yes, or express interest, THEN describe the activity:
-            - Explain WHY it's relevant to what the student is asking or to their data and the inferred VESPA element.
-            - Briefly describe WHAT the activity involves in a student-friendly way using its summary.
-            - If a PDF link is mentioned, you can say "There are resources available for this activity."
-            - Only recommend activities that are explicitly provided to you in the '--- Suggested Activities ---' or '--- Also Consider these Activities ---' sections of the RAG context. Use the activity's 'name' when referring to it.
-            - If multiple activities are suggested for an element, pick the one that seems most aligned with the student's specific phrasing or implied need.
+        system_prompt_content = f"""You are My VESPA AI Coach - a warm, supportive coach who helps students develop their Vision, Effort, Systems, Practice, and Attitude.
 
-        If the student's query is ambiguous, or if you're unsure which VESPA element or type of activity would be most helpful, ask a clarifying question first. 
-        For example, if they say 'I'm struggling,' you could ask, 'Can you tell me a bit more about what you're finding most challenging right now? Is it staying motivated, organizing your work, or something else?'
-        
-        If no specific RAG questions or activities are provided, or if the student's query is general, offer supportive advice and reflections based on their data summary and general coaching principles.
-        Keep your responses focused on the student's query and their data.
-        Remember to be positive and empowering!
-        If the RAG context included a "Coach's Opening Thought", you can subtly weave that sentiment into your initial response if appropriate.
-        """
+You're chatting with {student_name_for_chat}. Always use just their first name.
+
+Your coaching style:
+- Be conversational and natural, like a friendly mentor
+- Ask layered questions to understand their situation better
+- Listen actively and respond to what they're actually saying
+- Use the VESPA framework naturally in your guidance, without being rigid
+- Be encouraging but also gently challenging when appropriate
+
+IMPORTANT: Never start your responses with the student's name followed by a colon (like "Alena:"). Just respond naturally as if in conversation.
+
+When helping {student_name_for_chat}:
+1. First, understand their specific challenge through conversation
+2. Use reflective questions to help them think deeper
+3. Connect their challenges to relevant VESPA elements naturally
+4. If activities are suggested in the RAG context AND they're truly relevant to the student's specific need, you might introduce them - but only after understanding their situation
+5. Focus on practical, actionable advice they can implement
+
+Important: Don't immediately jump to suggesting activities. Build rapport first, understand their specific situation, and only suggest activities if they're genuinely helpful for what the student is describing.
+
+The RAG context may include coaching questions and activities - use these as inspiration, but adapt them naturally to the conversation. You're a coach, not a script reader.
+
+Remember: Every student is unique. What works for one might not work for another.
+
+Vary your response style - sometimes start with empathy, sometimes with a question, sometimes with an observation. Avoid formulaic responses like always saying "I understand" or "That sounds challenging." Be genuine and varied in your approach."""
         messages_for_llm = [{"role": "system", "content": system_prompt_content}]
 
         if rag_context_parts and len(rag_context_parts) > 1 : # More than just the header
             system_rag_content = "\n".join(rag_context_parts)
-            messages_for_llm.append({"role": "system", "content": f"ADDITIONAL CONTEXT FOR YOUR RESPONSE:\n{system_rag_content}"}) # Clearly label RAG for the LLM
+            
+            # Add guidance about using activities thoughtfully
+            activity_guidance = f"""
+
+--- How to Use Activities Effectively ---
+When considering activities for {student_name_for_chat}:
+1. Only suggest activities that directly address their specific challenge
+2. Don't suggest an activity just because it's available - it must be genuinely helpful
+3. If you do suggest an activity, explain specifically how it relates to what they've told you
+4. Consider whether the student seems ready for an activity or needs more conversation first
+5. Remember: Sometimes the best help is just listening and asking good questions
+
+Current conversation context suggests {student_name_for_chat} might benefit from {target_vespa_element_for_rag or 'general'} support."""
+            
+            messages_for_llm.append({"role": "system", "content": f"ADDITIONAL CONTEXT FOR YOUR RESPONSE:\n{system_rag_content}\n{activity_guidance}"}) # Clearly label RAG for the LLM
             app.logger.info(f"Student chat: Added RAG context to LLM prompt. Length: {len(system_rag_content)}")
             app.logger.debug(f"Full RAG context for LLM: {system_rag_content}")
 
@@ -1682,8 +1717,8 @@ def chat_turn():
             llm_response = openai.chat.completions.create(
                 model="gpt-4o-mini", # Using a slightly more capable model for better RAG utilization
                 messages=messages_for_llm,
-                max_tokens=350, 
-                temperature=0.65, 
+                max_tokens=400,  # Increased slightly for more complete responses
+                temperature=0.8,  # Increased for more varied, less formulaic responses
                 n=1,
                 stop=None
             )
