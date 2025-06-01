@@ -1370,6 +1370,43 @@ def student_coaching_data():
             "all_scored_questionnaire_statements": all_scored_statements,
             "school_vespa_averages": school_vespa_averages
         }
+
+        # --- NEW: Save student_overview_summary to Object_10, field_3289 ---
+        if llm_insights and isinstance(llm_insights, dict) and object10_data and object10_data.get('id'):
+            student_overview_summary_for_knack = llm_insights.get('student_overview_summary')
+            if student_overview_summary_for_knack and isinstance(student_overview_summary_for_knack, str) and \
+               not student_overview_summary_for_knack.lower().startswith("error:") and \
+               not student_overview_summary_for_knack.lower().startswith("ai insights for") and \
+               not student_overview_summary_for_knack.lower().startswith("an unexpected error") and \
+               not student_overview_summary_for_knack.lower().startswith("welcome") and \
+               student_overview_summary_for_knack.strip() != "": # Check for non-empty, non-generic summaries
+                
+                object10_record_id_to_update = object10_data.get('id')
+                payload_to_update_obj10 = {
+                    "field_3289": student_overview_summary_for_knack[:10000] # Knack paragraph text limit
+                }
+                headers_knack_update = {
+                    'X-Knack-Application-Id': KNACK_APP_ID,
+                    'X-Knack-REST-API-Key': KNACK_API_KEY,
+                    'Content-Type': 'application/json'
+                }
+                update_url_obj10 = f"{KNACK_API_BASE_URL}/object_10/records/{object10_record_id_to_update}"
+                try:
+                    app.logger.info(f"Attempting to update Object_10 record {object10_record_id_to_update} with student chat summary for field_3289. Summary (first 100 chars): '{student_overview_summary_for_knack[:100]}...'")
+                    update_response = requests.put(update_url_obj10, headers=headers_knack_update, json=payload_to_update_obj10)
+                    update_response.raise_for_status()
+                    app.logger.info(f"Successfully updated field_3289 for Object_10 record {object10_record_id_to_update}.")
+                except requests.exceptions.HTTPError as e_http_obj10:
+                    app.logger.error(f"HTTP error updating field_3289 for Object_10 {object10_record_id_to_update}: {e_http_obj10}. Response: {update_response.content if 'update_response' in locals() and update_response else 'N/A'}")
+                except requests.exceptions.RequestException as e_req_obj10:
+                    app.logger.error(f"Request exception updating field_3289 for Object_10 {object10_record_id_to_update}: {e_req_obj10}")
+                except Exception as e_gen_obj10:
+                    app.logger.error(f"General error updating field_3289 for Object_10 {object10_record_id_to_update}: {e_gen_obj10}")
+            else:
+                app.logger.info(f"Skipping update of field_3289 for Object_10 as LLM student_overview_summary was an error, placeholder, or empty: '{student_overview_summary_for_knack}'")
+        else:
+            app.logger.warning("Could not update field_3289 for Object_10 as llm_insights or object10_data (with ID) was missing/invalid.")
+
         return jsonify(final_response), 200
 
 # --- Helper function to determine student's educational level for coaching KBs ---
