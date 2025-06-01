@@ -1527,30 +1527,26 @@ def chat_turn():
         
         # 3. Add relevant VESPA statements from vespa-statements.json
         if VESPA_STATEMENTS_DATA and isinstance(VESPA_STATEMENTS_DATA, dict):
-            vespa_statements_dict = VESPA_STATEMENTS_DATA.get('vespa_statements', {})
-            if vespa_statements_dict and isinstance(vespa_statements_dict, dict):
-                for vespa_element_key, element_data in vespa_statements_dict.items():
-                    # Check if this element matches our target or user's message
-                    if (inferred_vespa_element_from_query and vespa_element_key.lower() == inferred_vespa_element_from_query.lower()) or \
-                       (not inferred_vespa_element_from_query and any(kw in current_user_message.lower() for kw in [vespa_element_key.lower(), vespa_element_key[0].lower()])):
+            vespa_statements_list = VESPA_STATEMENTS_DATA.get('vespa_statements', {}).get('statements', [])
+            if vespa_statements_list and isinstance(vespa_statements_list, list):
+                # Filter statements by category matching our inferred element
+                for statement_obj in vespa_statements_list:
+                    if isinstance(statement_obj, dict):
+                        statement_category = statement_obj.get('category', '').lower()
                         
-                        statements_data = element_data.get('statements', [])
-                        if statements_data and isinstance(statements_data, list):
-                            # Always include at least 2 positive and 2 negative statements for context
-                            positive_statements = [s for s in statements_data if s.get('type') == 'positive'][:2]
-                            negative_statements = [s for s in statements_data if s.get('type') == 'negative'][:2]
+                        # Check if this statement's category matches our inferred element
+                        if (inferred_vespa_element_from_query and statement_category == inferred_vespa_element_from_query.lower()) or \
+                           (not inferred_vespa_element_from_query and any(kw in current_user_message.lower() for kw in statement_obj.get('keywords', []))):
                             
-                            for statement in positive_statements + negative_statements:
-                                if len(relevant_vespa_statements) >= 4:
-                                    break
+                            if len(relevant_vespa_statements) < 4:
                                 relevant_vespa_statements.append({
-                                    'element': vespa_element_key,
-                                    'type': statement.get('type'),
-                                    'text': statement.get('text')
+                                    'element': statement_category.capitalize(),
+                                    'type': 'positive' if len(relevant_vespa_statements) < 2 else 'negative',  # Simple alternation for now
+                                    'text': statement_obj.get('statement', '')
                                 })
-                            
-                            if relevant_vespa_statements:
-                                break  # Found statements for one element, that's enough
+                        
+                        if len(relevant_vespa_statements) >= 4:
+                            break
 
         if relevant_vespa_statements:
             rag_context_parts.append("\n--- VESPA Framework Perspectives ---")
