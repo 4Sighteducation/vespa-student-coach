@@ -1475,11 +1475,23 @@ def chat_turn():
             student_educational_level_kb = get_student_educational_level(student_level_raw_from_context)
             app.logger.info(f"Chat Turn: Student Name: {student_name_for_chat}, Mapped Edu Level for KB: {student_educational_level_kb}")
 
+        # Calculate conversation depth (number of back-and-forth exchanges)
+        conversation_depth = len([msg for msg in chat_history if msg.get('role') == 'user'])
+        app.logger.info(f"Conversation depth: {conversation_depth} user messages")
+
+        # Check if user is explicitly asking for activities
+        user_asking_for_activity = any(phrase in current_user_message.lower() for phrase in [
+            "suggest an activity", "recommend an activity", "what activity", "any activities",
+            "activity suggestion", "activity recommendation", "yes please suggest", "yes, suggest"
+        ])
+
         # --- Enhanced RAG Context Building ---
         rag_context_parts = ["--- Context for My VESPA AI Coach ---"]
         suggested_activities_for_response = []
         chosen_coaching_questions_for_llm = []
         inferred_vespa_element_from_query = None
+        relevant_vespa_statements = []
+        relevant_coaching_insights_for_chat = []
         
         # 1. Add student's data summary to RAG
         if initial_ai_context:
@@ -1513,7 +1525,96 @@ def chat_turn():
                     app.logger.info(f"Inferred VESPA element '{inferred_vespa_element_from_query}' from user query.")
                     break
         
-        # 3. RAG based on KBs
+        # 3. Add relevant VESPA statements from vespa-statements.json
+        if VESPA_STATEMENTS_DATA and isinstance(VESPA_STATEMENTS_DATA, dict):
+            vespa_statements_dict = VESPA_STATEMENTS_DATA.get('vespa_statements', {})
+            if vespa_statements_dict and isinstance(vespa_statements_dict, dict):
+                for vespa_element_key, element_data in vespa_statements_dict.items():
+                    # Check if this element matches our target or user's message
+                    if (target_vespa_element_for_rag and vespa_element_key.lower() == target_vespa_element_for_rag.lower()) or \
+                       (not target_vespa_element_for_rag and any(kw in current_user_message.lower() for kw in [vespa_element_key.lower(), vespa_element_key[0].lower()])):
+                        
+                        statements_data = element_data.get('statements', [])
+                        if statements_data and isinstance(statements_data, list):
+                            # Always include at least 2 positive and 2 negative statements for context
+                            positive_statements = [s for s in statements_data if s.get('type') == 'positive'][:2]
+                            negative_statements = [s for s in statements_data if s.get('type') == 'negative'][:2]
+                            
+                            for statement in positive_statements + negative_statements:
+                                if len(relevant_vespa_statements) >= 4:
+                                    break
+                                relevant_vespa_statements.append({
+                                    'element': vespa_element_key,
+                                    'type': statement.get('type'),
+                                    'text': statement.get('text')
+                                })
+                            
+                            if relevant_vespa_statements:
+                                break  # Found statements for one element, that's enough
+
+        if relevant_vespa_statements:
+            rag_context_parts.append("\n--- VESPA Framework Perspectives ---")
+            current_element = None
+            for vs in relevant_vespa_statements:
+                if vs['element'] != current_element:
+                    current_element = vs['element']
+                    rag_context_parts.append(f"\n{current_element} characteristics:")
+                statement_prefix = "✓" if vs['type'] == 'positive' else "✗"
+                rag_context_parts.append(f"  {statement_prefix} {vs['text']}")
+            rag_context_parts.append("\nUse these perspectives to understand what the student might be experiencing and to guide your questions.")
+
+        # 4. Add relevant coaching insights
+        relevant_coaching_insights_for_chat = []
+        if COACHING_INSIGHTS_DATA and isinstance(COACHING_INSIGHTS_DATA, list):
+            # Get more insights and be more generous with relevance scoring
+            for insight in COACHING_INSIGHTS_DATA[:50]:  # Check more insights
+                if isinstance(insight, dict):
+                    insight_name = insight.get('name', '').lower()
+                    insight_summary = insight.get('summary', '').lower()
+                    insight_tags = [tag.lower() for tag in insight.get('tags', [])]
+                    
+                    # Calculate relevance score more generously
+                    relevance_score = 0
+                    query_lower = current_user_message.lower()
+                    
+                    # Check for keyword matches in user's message
+                    insight_keywords = insight_name.split() + insight_summary.split()[:10] + insight_tags
+                    for keyword in insight_keywords:
+                        if len(keyword) > 3 and keyword in query_lower:
+                            relevance_score += 2
+                    
+                    # Check for VESPA element match
+                    if target_vespa_element_for_rag:
+                        if target_vespa_element_for_rag.lower() in insight_tags or \
+                           target_vespa_element_for_rag.lower() in insight_name or \
+                           target_vespa_element_for_rag.lower() in insight_summary:
+                            relevance_score += 3
+                    
+                    # Include insights with any relevance
+                    if relevance_score > 0 and len(relevant_coaching_insights_for_chat) < 4:  # Increased to 4
+                        relevant_coaching_insights_for_chat.append({
+                            'name': insight.get('name'),
+                            'summary': insight.get('summary'),
+                            'key_points': insight.get('key_points', [])[:3],  # Get key points
+                            'relevance': relevance_score
+                        })
+            
+            # Sort by relevance and take top insights
+            relevant_coaching_insights_for_chat.sort(key=lambda x: x['relevance'], reverse=True)
+            relevant_coaching_insights_for_chat = relevant_coaching_insights_for_chat[:3]
+        
+        if relevant_coaching_insights_for_chat:
+            rag_context_parts.append("\n--- Coaching Insights & Research ---")
+            for ci in relevant_coaching_insights_for_chat:
+                rag_context_parts.append(f"\n{ci['name']}:")
+                rag_context_parts.append(f"Research shows: {ci['summary']}")
+                if ci.get('key_points'):
+                    rag_context_parts.append("Key coaching points:")
+                    for point in ci['key_points']:
+                        rag_context_parts.append(f"  • {point}")
+            rag_context_parts.append("\nUse these insights to inform your coaching approach and questions.")
+
+        # 5. RAG based on Coaching Questions KB
         if coaching_kb and VESPA_ACTIVITIES_DATA:
             app.logger.info(f"Processing RAG with Coaching KB and Activities KB. Student Edu Level: {student_educational_level_kb}")
             
@@ -1557,7 +1658,7 @@ def chat_turn():
                 # Fallback: if no specific element, still allow general keyword search for activities later
                 app.logger.info("No specific VESPA element identified for targeted RAG. Will rely on general keyword search for activities if applicable.")
             
-            # c. Retrieve Specific Coaching Questions and Activities
+            # c. Retrieve Specific Coaching Questions (always include these)
             if target_vespa_element_for_rag and target_score_category_for_rag and target_score_category_for_rag != "N/A":
                 questions_data_level = coaching_kb.get('vespaSpecificCoachingQuestionsWithActivities', {}).get(target_vespa_element_for_rag, {}).get(student_educational_level_kb, {})
                 questions_for_category = questions_data_level.get(target_score_category_for_rag, {})
@@ -1566,13 +1667,20 @@ def chat_turn():
                 retrieved_activity_ids = questions_for_category.get('related_activity_ids', [])
 
                 if retrieved_questions:
-                    chosen_coaching_questions_for_llm = [q for q in retrieved_questions[:2]] # Take first 1-2 questions
+                    chosen_coaching_questions_for_llm = [q for q in retrieved_questions[:3]] # Take first 3 questions
                     rag_context_parts.append(f"\n--- Relevant Coaching Questions for '{target_vespa_element_for_rag}' (Level: {student_educational_level_kb}, Score Profile: {target_score_category_for_rag}) ---")
                     for q_text in chosen_coaching_questions_for_llm:
                         rag_context_parts.append(f"- {q_text}")
                 
-                if retrieved_activity_ids:
-                    rag_context_parts.append(f"\n--- Suggested Activities for '{target_vespa_element_for_rag}' ---")
+                # ONLY include activities if conversation is mature enough OR user is asking
+                include_activities = (conversation_depth >= 3 or user_asking_for_activity) and retrieved_activity_ids
+                
+                if include_activities:
+                    if user_asking_for_activity:
+                        rag_context_parts.append(f"\n--- Suggested Activities for '{target_vespa_element_for_rag}' ---")
+                    else:
+                        rag_context_parts.append(f"\n--- Potential Activities for '{target_vespa_element_for_rag}' (Available when student is ready) ---")
+                    
                     activity_count = 0
                     for act_id in retrieved_activity_ids:
                         if activity_count >= 3: break # Increased limit to 3 activities
@@ -1588,14 +1696,23 @@ def chat_turn():
                             }
                             suggested_activities_for_response.append(activity_data_for_llm)
                             pdf_available_text = " (Resource PDF available)" if activity_data_for_llm['pdf_link'] and activity_data_for_llm['pdf_link'] != '#' else ""
-                            rag_context_parts.append(
-                                f"- Name: {activity_data_for_llm['name']}{pdf_available_text}. Summary: {activity_data_for_llm['short_summary'][:150]}..."
-                            )
+                            
+                            if user_asking_for_activity:
+                                rag_context_parts.append(
+                                    f"\n- Name: {activity_data_for_llm['name']}{pdf_available_text}.\n  Summary: {activity_data_for_llm['short_summary']}"
+                                )
+                            else:
+                                # Just brief mention for AI awareness
+                                rag_context_parts.append(f"- {activity_data_for_llm['name']}: {activity_data_for_llm['short_summary'][:100]}...")
+                            
                             activity_count += 1
                     app.logger.info(f"Student chat RAG: Found {len(suggested_activities_for_response)} activities via coaching questions link for {target_vespa_element_for_rag}.")
+                elif retrieved_activity_ids and conversation_depth >= 2:
+                    # Add a note that activities are available but not shown yet
+                    rag_context_parts.append(f"\n[Note: There are relevant activities available for '{target_vespa_element_for_rag}' that could be suggested if the student wants specific exercises or tools.]")
 
-            # d. Fallback: General keyword search for activities if specific KB RAG didn't yield much
-            if not suggested_activities_for_response and not is_focus_area_query: # Only if not already found via specific RAG & not focus query
+            # d. Fallback: General keyword search for activities - ONLY if user is asking OR conversation is deep enough
+            if not suggested_activities_for_response and not is_focus_area_query and (conversation_depth >= 3 or user_asking_for_activity):
                 common_words = {"is", "a", "the", "and", "to", "of", "it", "in", "for", "on", "with", "as", "an", "at", "by", "my", "i", "me", "what", "how", "help", "can", "some", "this", "that", "area", "areas", "score", "scores"}
                 cleaned_msg_for_kw = current_user_message.lower()
                 for char_to_replace in ['?', '.', ',', '\'', '"', '!']:
@@ -1679,6 +1796,41 @@ The RAG context may include coaching questions and activities - use these as ins
 Remember: Every student is unique. What works for one might not work for another.
 
 Vary your response style - sometimes start with empathy, sometimes with a question, sometimes with an observation. Avoid formulaic responses like always saying "I understand" or "That sounds challenging." Be genuine and varied in your approach."""
+        
+        # Add conversation depth guidance
+        conversation_guidance = ""
+        if conversation_depth < 3 and not user_asking_for_activity:
+            conversation_guidance = f"""
+
+CONVERSATION PHASE: You're still in the early stages (turn {conversation_depth + 1}). Focus on:
+- Building rapport and understanding
+- Asking open-ended questions to explore their situation
+- Using the VESPA statements and coaching insights to guide your questions
+- Helping them reflect on their experiences
+- DO NOT suggest activities yet unless they specifically ask
+
+If activities are mentioned in the context, IGNORE them for now. Instead, after {3 - conversation_depth} more exchanges, you might ask: "Would you like me to suggest an activity that might help with this?"
+"""
+        elif conversation_depth >= 3 and suggested_activities_for_response and not user_asking_for_activity:
+            conversation_guidance = f"""
+
+CONVERSATION PHASE: You've built some rapport (turn {conversation_depth + 1}). You may now:
+- Continue the coaching conversation
+- If it feels natural and you've understood their challenge well, you could ask: "I'm wondering if you'd find it helpful for me to suggest an activity or exercise that might support you with this. Would that be useful?"
+- Only suggest activities if they say yes or have already asked
+"""
+        elif user_asking_for_activity and suggested_activities_for_response:
+            conversation_guidance = f"""
+
+ACTIVITY SUGGESTION PHASE: The student has asked for activity suggestions. You should:
+- Briefly acknowledge their request
+- Introduce 1-2 of the most relevant activities from the context
+- Explain specifically how each activity relates to what they've shared
+- Ask which one resonates with them or if they'd like to hear about others
+"""
+        
+        system_prompt_content += conversation_guidance
+        
         messages_for_llm = [{"role": "system", "content": system_prompt_content}]
 
         if rag_context_parts and len(rag_context_parts) > 1 : # More than just the header
@@ -1695,7 +1847,9 @@ When considering activities for {student_name_for_chat}:
 4. Consider whether the student seems ready for an activity or needs more conversation first
 5. Remember: Sometimes the best help is just listening and asking good questions
 
-Current conversation context suggests {student_name_for_chat} might benefit from {target_vespa_element_for_rag or 'general'} support."""
+Current conversation context suggests {student_name_for_chat} might benefit from {target_vespa_element_for_rag or 'general'} support.
+
+CRITICAL: In early conversation turns (less than 3 exchanges), focus on the VESPA statements and coaching insights to guide your questions and reflections. These provide the framework for understanding the student's needs before moving to specific activities."""
             
             messages_for_llm.append({"role": "system", "content": f"ADDITIONAL CONTEXT FOR YOUR RESPONSE:\n{system_rag_content}\n{activity_guidance}"}) # Clearly label RAG for the LLM
             app.logger.info(f"Student chat: Added RAG context to LLM prompt. Length: {len(system_rag_content)}")
@@ -1851,6 +2005,7 @@ def health_check():
 coaching_kb = load_json_file('coaching_questions_knowledge_base.json')
 COACHING_INSIGHTS_DATA = load_json_file('coaching_insights.json')
 VESPA_ACTIVITIES_DATA = load_json_file('vespa_activities_kb.json')
+VESPA_STATEMENTS_DATA = load_json_file('vespa-statements.json')  # Load VESPA statements KB
 
 # Load ALPS bands (ensure these JSON files are in your student app's knowledge_base directory)
 alps_bands_btec2010_kb = load_json_file('alpsBands_btec2010_main.json')
@@ -1886,6 +2041,8 @@ if not COACHING_INSIGHTS_DATA: app.logger.warning("Coaching Insights KB (coachin
 else: app.logger.info(f"Successfully loaded {len(COACHING_INSIGHTS_DATA)} records from Coaching Insights KB.")
 if not VESPA_ACTIVITIES_DATA: app.logger.warning("VESPA Activities KB (vespa_activities_kb.json) failed to load.")
 else: app.logger.info(f"Successfully loaded {len(VESPA_ACTIVITIES_DATA)} records from VESPA Activities KB.")
+if not VESPA_STATEMENTS_DATA: app.logger.warning("VESPA Statements KB (vespa-statements.json) failed to load.")
+else: app.logger.info(f"Successfully loaded VESPA Statements KB.")
 if not REFLECTIVE_STATEMENTS_DATA: app.logger.warning("Reflective Statements (100_statements.txt) failed to load or is empty.")
 else: app.logger.info(f"Successfully loaded {len(REFLECTIVE_STATEMENTS_DATA)} statements from 100_statements.txt")
 
