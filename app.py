@@ -1417,9 +1417,11 @@ def chat_turn():
         
         if not OPENAI_API_KEY:
             app.logger.error("chat_turn: OpenAI API key not configured.")
+            # Corrected call: Removed is_student_chat
             save_chat_message_to_knack(student_object3_id, "Student", current_user_message)
             return jsonify({"ai_response": "I am currently unable to respond (AI not configured). Your message has been logged."}), 200
 
+        # Corrected call: Removed is_student_chat
         user_message_saved_id = save_chat_message_to_knack(student_object3_id, "Student", current_user_message)
         if not user_message_saved_id:
             app.logger.error(f"chat_turn: Failed to save student's message to Knack for student Object_3 ID {student_object3_id}.")
@@ -1654,6 +1656,7 @@ def chat_turn():
         except Exception as e:
             app.logger.error(f"Student chat: Error calling OpenAI API: {e}")
 
+        # Corrected call: Removed is_student_chat
         ai_message_saved_id = save_chat_message_to_knack(student_object3_id, "My AI Coach", ai_response_text)
         if not ai_message_saved_id:
             app.logger.error(f"Student chat: Failed to save AI's response to Knack for student Object_3 ID {student_object3_id}.")
