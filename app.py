@@ -1831,7 +1831,7 @@ if not report_text_kb: app.logger.warning("Report Text KB (Object_33) failed to 
 
 # --- Save Chat Message to Knack (Object_118) --- # Docstring needs update
 # UPDATED to save to Object_119
-def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student_chat=False, ai_message_id_if_replying_to_tutor=None, is_liked=False):
+def save_chat_message_to_knack(student_obj3_id, author, message_text, is_liked=False):
     if not KNACK_APP_ID or not KNACK_API_KEY:
         app.logger.error("Knack App ID or API Key is missing for save_chat_message_to_knack.")
         return None
@@ -1840,26 +1840,126 @@ def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student
         app.logger.error("save_chat_message_to_knack: student_obj3_id is required.")
         return None
 
-    # Object_119 is the "AIChatLog" for students
-    # field_3283: Student (Connection to Object_3)
-    # field_3282: Author (Short Text)
+    # Object_119 ("AIChatLog" for students) Field Mappings:
+    # field_3288: Session ID (Short Text)
+    # field_3281: Log Sequence (Auto-increment - Knack handles)
+    # field_3282: Author (Short Text - "Student" or "My AI Coach")
+    # field_3283: Student (Connection to Object_6 - Student Records)
+    # field_3284: Object_10 connection (Connection to Object_10 - VESPA Results)
+    # field_3285: Timestamp (Date/Time - dd/mm/yyyy HH:MM:SS)
     # field_3286: Conversation Log (Paragraph Text)
-    # field_1285: Message Timestamp (Date/Time - Knack handles this - CONFIRM IF STILL THIS FIELD FOR TIMESTAMP)
-    # field_3287: Liked (Yes/No)
-    # field_3288: SessionID (Short Text) - NEW
+    # field_3287: Liked (Yes/No Boolean)
 
-    session_id = f"{student_obj3_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}" # Added time to session for more uniqueness
-    current_timestamp_knack_format = datetime.now().strftime('%d/%m/%Y %H:%M:%S') # Changed to DD/MM/YYYY HH:MM:SS
+    student_email = None
+    student_object_6_id = None
+    student_object_10_id = None
+
+    # 1. Get student_email from Object_3 using student_obj3_id
+    if student_obj3_id:
+        app.logger.info(f"save_chat: Fetching Object_3 record for ID: {student_obj3_id} to get email.")
+        object_3_record = get_knack_record("object_3", record_id=student_obj3_id)
+        if object_3_record and isinstance(object_3_record, dict):
+            raw_val_field70 = object_3_record.get('field_70_raw')
+            obj_val_field70 = object_3_record.get('field_70')
+
+            if isinstance(obj_val_field70, dict) and 'email' in obj_val_field70 and isinstance(obj_val_field70['email'], str):
+                student_email = obj_val_field70['email'].strip()
+            elif isinstance(raw_val_field70, dict) and 'email' in raw_val_field70 and isinstance(raw_val_field70['email'], str):
+                 student_email = raw_val_field70['email'].strip()
+            elif isinstance(raw_val_field70, str):
+                temp_email_str = raw_val_field70.strip()
+                if temp_email_str.lower().startswith('<a') and 'mailto:' in temp_email_str.lower() and temp_email_str.lower().endswith('</a>'):
+                    try:
+                        mailto_keyword = 'mailto:'
+                        mailto_start_index = temp_email_str.lower().find(mailto_keyword) + len(mailto_keyword)
+                        end_char_index = len(temp_email_str)
+                        quote_index = temp_email_str.find('"', mailto_start_index)
+                        if quote_index != -1: end_char_index = min(end_char_index, quote_index)
+                        single_quote_index = temp_email_str.find("'", mailto_start_index)
+                        if single_quote_index != -1: end_char_index = min(end_char_index, single_quote_index)
+                        angle_bracket_index = temp_email_str.find('>', mailto_start_index)
+                        if angle_bracket_index != -1: end_char_index = min(end_char_index, angle_bracket_index)
+                        extracted_from_href = temp_email_str[mailto_start_index:end_char_index].strip()
+                        if '@' in extracted_from_href and ' ' not in extracted_from_href and '<' not in extracted_from_href:
+                            student_email = extracted_from_href
+                        if not student_email:
+                            text_start_actual_index = temp_email_str.find('>') 
+                            if text_start_actual_index != -1:
+                                text_start_actual_index +=1
+                                text_end_index = temp_email_str.lower().rfind('</a>')
+                                if text_end_index > text_start_actual_index :
+                                    extracted_text = temp_email_str[text_start_actual_index:text_end_index].strip()
+                                    if '@' in extracted_text and ' ' not in extracted_text and '<' not in extracted_text:
+                                        student_email = extracted_text
+                    except Exception as e_parse:
+                        app.logger.warning(f"save_chat: Error parsing HTML email string '{temp_email_str}' from Object_3: {e_parse}")
+                elif '@' in temp_email_str and not '<' in temp_email_str:
+                    student_email = temp_email_str
+            elif isinstance(obj_val_field70, str) and '@' in obj_val_field70 and not '<' in obj_val_field70 :
+                 student_email = obj_val_field70.strip()
+            
+            if student_email:
+                app.logger.info(f"save_chat: Extracted student email '{student_email}' from Object_3.")
+            else:
+                app.logger.warning(f"save_chat: Could not extract email from Object_3 record {student_obj3_id}. Raw: '{raw_val_field70}', Obj: '{obj_val_field70}'")
+        else:
+            app.logger.warning(f"save_chat: Could not fetch Object_3 record for ID {student_obj3_id}.")
+
+    # 2. Get student_object_6_id using student_email (for field_3283)
+    if student_email:
+        app.logger.info(f"save_chat: Fetching Object_6 record using email '{student_email}' (field_91).")
+        filters_obj6 = [{'field': 'field_91', 'operator': 'is', 'value': student_email}]
+        obj6_response = get_knack_record("object_6", filters=filters_obj6)
+        if obj6_response and isinstance(obj6_response, dict) and obj6_response.get('records'):
+            if obj6_response['records']: # Check if the list is not empty
+                student_object_6_id = obj6_response['records'][0].get('id')
+                app.logger.info(f"save_chat: Found Object_6 ID: {student_object_6_id}.")
+            else:
+                app.logger.warning(f"save_chat: No Object_6 record found for email '{student_email}'.")
+        else:
+            app.logger.warning(f"save_chat: Error or unexpected response fetching Object_6 record for email '{student_email}'. Response: {str(obj6_response)[:200]}")
+    else:
+        app.logger.warning(f"save_chat: No student_email available to fetch Object_6 ID for student_obj3_id {student_obj3_id}.")
+
+    # 3. Get student_object_10_id using student_email (for field_3284)
+    if student_email:
+        app.logger.info(f"save_chat: Fetching Object_10 record using email '{student_email}' (field_197).")
+        filters_obj10 = [{'field': 'field_197', 'operator': 'is', 'value': student_email}]
+        obj10_response = get_knack_record("object_10", filters=filters_obj10)
+        if obj10_response and isinstance(obj10_response, dict) and obj10_response.get('records'):
+            if obj10_response['records']: # Check if the list is not empty
+                student_object_10_id = obj10_response['records'][0].get('id')
+                app.logger.info(f"save_chat: Found Object_10 ID: {student_object_10_id} for field_3284.")
+            else:
+                app.logger.warning(f"save_chat: No Object_10 record found for email '{student_email}' for field_3284.")
+        else:
+            app.logger.warning(f"save_chat: Error or unexpected response fetching Object_10 record for email '{student_email}' for field_3284. Response: {str(obj10_response)[:200]}")
+    else:
+        app.logger.warning(f"save_chat: No student_email available to fetch Object_10 ID for student_obj3_id {student_obj3_id}.")
+
+    # 4. Construct Payload
+    session_id = f"{student_obj3_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    current_timestamp_knack_format = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
     
     payload = {
-        "field_3283": [student_obj3_id], # Student Connection
-        "field_3282": author,           # Author
-        "field_3286": message_text[:10000], # Conversation Log
-        "field_3287": "Yes" if is_liked else "No", # Liked
-        "field_3288": session_id,        # Session ID
-        "field_3285": current_timestamp_knack_format # Message Timestamp
+        "field_3282": author,
+        "field_3286": message_text[:10000], # Max length for paragraph text
+        "field_3285": current_timestamp_knack_format,
+        "field_3287": "Yes" if is_liked else "No",
+        "field_3288": session_id
     }
-    # field_1285 (Timestamp) is assumed to be handled by Knack on record creation.
+
+    if student_object_6_id:
+        payload["field_3283"] = student_object_6_id # Knack connection field expects direct ID string for "to one"
+    else:
+        app.logger.warning(f"save_chat: student_object_6_id is None. field_3283 will not be set for chat log related to student_obj3_id {student_obj3_id}.")
+        # If field_3283 is mandatory in Knack, this omission will cause a 400 Bad Request.
+        # Consider returning None early or handling the error if this connection is critical.
+
+    if student_object_10_id:
+        payload["field_3284"] = student_object_10_id # Knack connection field
+    else:
+        app.logger.warning(f"save_chat: student_object_10_id is None. field_3284 will not be set for chat log related to student_obj3_id {student_obj3_id}.")
         
     headers = {
         'X-Knack-Application-Id': KNACK_APP_ID,
@@ -1868,20 +1968,34 @@ def save_chat_message_to_knack(student_obj3_id, author, message_text, is_student
     }
     
     url = f"{KNACK_API_BASE_URL}/object_119/records"
-    app.logger.info(f"Saving chat message to Knack ({url}): Payload Author='{author}', StudentObj3ID='{student_obj3_id}', SessionID='{session_id}'")
+    app.logger.info(f"Saving chat message to Knack ({url}): Payload Author='{author}', StudentObj3ID='{student_obj3_id}', SessionID='{session_id}', Obj6ID='{student_object_6_id}', Obj10ID='{student_object_10_id}'")
 
     try:
         response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
+        response.raise_for_status() # Will raise HTTPError for 4xx/5xx responses
         response_data = response.json()
         app.logger.info(f"Chat message saved successfully to Knack (object_119). Record ID: {response_data.get('id')}")
         return response_data.get('id')
     except requests.exceptions.HTTPError as e:
-        app.logger.error(f"HTTP error saving chat message to object_119: {e}. Response: {response.content if response else 'No response object'}")
+        # Log the full response content if available for better debugging
+        response_content = "No response content available"
+        if e.response is not None:
+            try:
+                response_content = e.response.text # or e.response.json() if it's JSON
+            except Exception as ex_resp:
+                response_content = f"Could not decode response content: {ex_resp}"
+        app.logger.error(f"HTTP error saving chat message to object_119: {e}. Status: {e.response.status_code if e.response else 'N/A'}. Response: {response_content}")
     except requests.exceptions.RequestException as e:
         app.logger.error(f"Request exception saving chat message to object_119: {e}")
-    except json.JSONDecodeError:
-        app.logger.error(f"JSON decode error for Knack save chat (object_119) response. Response text: {response.text if response else 'No response object'}")
+    except json.JSONDecodeError as e_json: # Catch JSONDecodeError specifically
+        # This can happen if response.json() fails because the response is not valid JSON
+        response_text_for_log = "Response object not available or text could not be read."
+        if 'response' in locals() and response is not None: # Check if response variable exists and is not None
+             try:
+                response_text_for_log = response.text
+             except Exception:
+                pass # Keep the default message
+        app.logger.error(f"JSON decode error for Knack save chat (object_119) response: {e_json}. Response text: {response_text_for_log}")
     return None
 
 # --- NEW ENDPOINT FOR LIKING/UNLIKING A CHAT MESSAGE ---
