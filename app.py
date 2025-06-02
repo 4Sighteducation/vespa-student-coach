@@ -1865,6 +1865,22 @@ def chat_turn():
                         if inferred_vespa_element_from_query and activity.get('vespa_element', '').lower() == inferred_vespa_element_from_query.lower():
                             relevance_score += 3
                         
+                        # Boost activities that match the specific context of the conversation
+                        # Look for thematic alignment between message and activity
+                        context_keywords = {
+                            "active_learning": ["flashcard", "test", "quiz", "retrieval", "practice", "leitner", "command verb"],
+                            "organization": ["plan", "schedule", "diary", "timetable", "system", "organize"],
+                            "mindset": ["confidence", "stress", "anxiety", "belief", "attitude", "resilience"],
+                            "goal_setting": ["goal", "target", "vision", "future", "career", "aspiration"]
+                        }
+                        
+                        # Check which context the user's message relates to
+                        for context_type, context_words in context_keywords.items():
+                            if any(word in current_user_message.lower() for word in context_words):
+                                # Boost activities that align with this context
+                                matching_context_score = sum(1 for word in context_words if word in activity_text_to_search)
+                                relevance_score += matching_context_score
+                        
                         if relevance_score > 0:
                             scored_activities.append((relevance_score, activity))
                     
@@ -1907,17 +1923,12 @@ Your coaching style:
 
 IMPORTANT: Never start your responses with the student's name followed by a colon (like "Alena:"). Just respond naturally as if in conversation.
 
-CRITICAL REVISION GUIDANCE:
-When students mention passive revision strategies like highlighting, re-reading notes, or just copying notes:
-- Acknowledge their current approach but gently challenge its effectiveness
-- Ask questions that lead them to realize these are passive, low-level strategies
-- Guide them towards active learning methods like:
-  • Self-testing and retrieval practice
-  • Teaching others or explaining out loud
-  • Past paper practice
-  • Creating their own questions
-  • Using flashcards for active recall
-- Don't be dismissive, but help them understand why active methods work better
+When responding to students:
+- Pay attention to what they're actually telling you about their challenges or successes
+- If they mention strategies that might not be optimal, explore their experience with those approaches first
+- Help them discover insights through thoughtful questions rather than direct instruction
+- Let the conversation flow naturally - sometimes they need encouragement, sometimes practical tips, sometimes just to be heard
+- Remember: effective learning takes many forms - what matters is finding what works for each individual student in their current situation
 
 When helping {student_name_for_chat}:
 1. First, understand their specific challenge through conversation
@@ -1989,7 +2000,9 @@ Current conversation context suggests {student_name_for_chat} might benefit from
 
 CRITICAL: In early conversation turns (less than 2 exchanges), focus on the VESPA statements and coaching insights to guide your questions and reflections. These provide the framework for understanding the student's needs before moving to specific activities.
 
-REVISION-SPECIFIC NOTE: If the student is using passive revision methods (highlighting, note-taking only), your priority is to help them understand why these are ineffective and guide them towards active learning strategies."""
+CONTEXTUAL AWARENESS: Pay attention to what specific challenge or topic the student is discussing. The activities suggested should directly address their current concern, whether that's about study methods, organization, confidence, goal-setting, or any other aspect of their learning journey.
+
+ACTIVITY RELEVANCE: When activities are available in the context, consider which ones truly match what the student is experiencing right now. An activity about goal-setting won't help someone struggling with test anxiety, just as a revision technique won't help someone who needs organizational support."""
             
             messages_for_llm.append({"role": "system", "content": f"ADDITIONAL CONTEXT FOR YOUR RESPONSE:\n{system_rag_content}\n{activity_guidance}"}) # Clearly label RAG for the LLM
             app.logger.info(f"Student chat: Added RAG context to LLM prompt. Length: {len(system_rag_content)}")
