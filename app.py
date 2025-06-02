@@ -1606,7 +1606,7 @@ def chat_turn():
                 ("vision", "goal", "future", "career", "motivation", "purpose", "direction", "aspiration", "dream", "ambition"): "Vision",
                 ("effort", "hard work", "procrastination", "trying", "persevere", "lazy", "energy", "work ethic", "dedication", "commitment"): "Effort",
                 ("systems", "organization", "plan", "notes", "timetable", "deadline", "homework", "complete", "time management", "schedule", "diary", "planner", "organised", "organize", "structure", "routine"): "Systems",
-                ("practice", "revision", "revise", "exam prep", "test myself", "study", "memory", "technique", "method", "preparation", "learning", "highlighting", "note-taking", "flashcards", "past papers", "testing"): "Practice",
+                ("practice", "revision", "revise", "exam prep", "test myself", "study", "memory", "technique", "method", "preparation", "learning", "highlighting", "note-taking", "flashcards", "past papers", "past paper", "exam paper", "mock exam", "question practice", "testing"): "Practice",
                 ("attitude", "mindset", "stress", "pressure", "confidence", "difficult", "anxiety", "worry", "belief", "resilience", "positive", "negative"): "Attitude"
             }
             for keywords_tuple, element_name in keyword_to_element_map.items():
@@ -1868,10 +1868,10 @@ def chat_turn():
                         # Boost activities that match the specific context of the conversation
                         # Look for thematic alignment between message and activity
                         context_keywords = {
-                            "active_learning": ["flashcard", "test", "quiz", "retrieval", "practice", "leitner", "command verb"],
-                            "organization": ["plan", "schedule", "diary", "timetable", "system", "organize"],
-                            "mindset": ["confidence", "stress", "anxiety", "belief", "attitude", "resilience"],
-                            "goal_setting": ["goal", "target", "vision", "future", "career", "aspiration"]
+                            "active_learning": ["flashcard", "test", "quiz", "retrieval", "practice", "leitner", "command verb", "past paper", "exam paper", "mock exam", "question practice", "self-testing", "spaced repetition", "interleaving"],
+                            "organization": ["plan", "schedule", "diary", "timetable", "system", "organize", "task management", "prioritization"],
+                            "mindset": ["confidence", "stress", "anxiety", "belief", "attitude", "resilience", "growth mindset", "coping"],
+                            "goal_setting": ["goal", "target", "vision", "future", "career", "aspiration", "objective", "plan"]
                         }
                         
                         # Check which context the user's message relates to
@@ -1879,9 +1879,9 @@ def chat_turn():
                             if any(word in current_user_message.lower() for word in context_words):
                                 # Boost activities that align with this context
                                 matching_context_score = sum(1 for word in context_words if word in activity_text_to_search)
-                                relevance_score += matching_context_score
+                                relevance_score += matching_context_score * 2 # Increased boost for thematic alignment
                         
-                        if relevance_score > 0:
+                        if relevance_score > 1: # Slightly higher threshold for initial consideration in fallback
                             scored_activities.append((relevance_score, activity))
                     
                     # Sort by relevance score (highest first)
@@ -1931,15 +1931,21 @@ When responding to students:
 - Remember: effective learning takes many forms - what matters is finding what works for each individual student in their current situation
 
 When helping {student_name_for_chat}:
-1. First, understand their specific challenge through conversation
-2. Use reflective questions to help them think deeper
-3. Connect their challenges to relevant VESPA elements naturally
-4. If activities are suggested in the RAG context AND they're truly relevant to the student's specific need, you might introduce them - but only after understanding their situation
-5. Focus on practical, actionable advice they can implement
+1. First, understand their specific challenge through conversation.
+2. Use reflective questions to help them think deeper.
+3. Connect their challenges to relevant VESPA elements naturally.
+4. If activities are suggested in the RAG context AND they're TRULY and DIRECTLY relevant to the student's specific current need, you might introduce them - but only after thoroughly understanding their situation.
+5. Focus on practical, actionable advice they can implement.
 
 Important: Don't immediately jump to suggesting activities. Build rapport first, understand their specific situation, and only suggest activities if they're genuinely helpful for what the student is describing.
 
-The RAG context may include coaching questions and activities - use these as inspiration, but adapt them naturally to the conversation. You're a coach, not a script reader.
+CRITICAL: Before suggesting any activity, critically evaluate if it DIRECTLY and CLEARLY addresses the student's current topic of discussion and expressed needs. If the activities provided in your RAG context do not seem relevant to the immediate conversation, it is better to continue the conversation to understand their needs better, or ask if they'd like suggestions on a different topic, rather than suggesting an irrelevant activity. If you do suggest an activity, state clearly and briefly WHY you are suggesting that particular activity in relation to what the student has said.
+
+When you suggest activities, ALWAYS introduce them with a natural conversational phrase, for example: 'Okay, based on what you've said, here are a couple of activities that I think could be helpful:' or 'That makes sense. Perhaps these activities could offer some strategies:' or 'Have a look at these, they might be useful for that:'. Ensure the lead-in feels connected to the ongoing conversation.
+
+If no activities from the RAG context seem relevant to the student's immediate discussion, do not suggest any. Instead, you can say something like, 'I don't have a specific activity that comes to mind for that right now, but perhaps we can explore [related aspect]?' or simply continue the coaching conversation to better understand their needs.
+
+The RAG context (ADDITIONAL CONTEXT FOR YOUR RESPONSE section) may include coaching questions and activities - use these as inspiration, but adapt them naturally to the conversation. You're a coach, not a script reader.
 
 Remember: Every student is unique. What works for one might not work for another.
 
@@ -1986,23 +1992,21 @@ ACTIVITY SUGGESTION PHASE: The student has asked for activity suggestions. You s
             system_rag_content = "\n".join(rag_context_parts)
             
             # Add guidance about using activities thoughtfully
-            activity_guidance = f"""
-
---- How to Use Activities Effectively ---
-When considering activities for {student_name_for_chat}:
-1. Only suggest activities that directly address their specific challenge
-2. Don't suggest an activity just because it's available - it must be genuinely helpful
-3. If you do suggest an activity, explain specifically how it relates to what they've told you
-4. Consider whether the student seems ready for an activity or needs more conversation first
-5. Remember: Sometimes the best help is just listening and asking good questions
+            activity_guidance = f"""--- How to Use Activities Effectively (Interpreting RAG Context) ---
+When considering activities for {student_name_for_chat} from the RAG context:
+1. Only suggest activities that directly address their specific challenge as discussed in the current conversation.
+2. Don't suggest an activity just because it's available in the RAG context - it must be genuinely helpful for the immediate topic.
+3. If you do suggest an activity, explain specifically and briefly how it relates to what they've told you (e.g., "The '25min Sprints' activity could help you tackle those past papers by breaking them into focused chunks."). This is in addition to the general lead-in phrase you should use as per your main instructions.
+4. Consider whether the student seems ready for an activity or needs more conversation first.
+5. Remember: Sometimes the best help is just listening and asking good questions.
 
 Current conversation context suggests {student_name_for_chat} might benefit from {target_vespa_element_for_rag or 'general'} support.
 
-CRITICAL: In early conversation turns (less than 2 exchanges), focus on the VESPA statements and coaching insights to guide your questions and reflections. These provide the framework for understanding the student's needs before moving to specific activities.
+CRITICAL (RAG Interpretation): In early conversation turns (less than 2 exchanges), focus on the VESPA statements and coaching insights in the RAG to guide your questions and reflections. These provide the framework for understanding the student's needs before moving to specific activities.
 
-CONTEXTUAL AWARENESS: Pay attention to what specific challenge or topic the student is discussing. The activities suggested should directly address their current concern, whether that's about study methods, organization, confidence, goal-setting, or any other aspect of their learning journey.
+CONTEXTUAL AWARENESS (RAG Interpretation): Pay attention to what specific challenge or topic the student is discussing. The activities suggested from the RAG context should directly address their current concern, whether that's about study methods, organization, confidence, goal-setting, or any other aspect of their learning journey.
 
-ACTIVITY RELEVANCE: When activities are available in the context, consider which ones truly match what the student is experiencing right now. An activity about goal-setting won't help someone struggling with test anxiety, just as a revision technique won't help someone who needs organizational support."""
+ACTIVITY RELEVANCE (RAG Interpretation): When activities are available in the RAG context, consider which ones truly match what the student is experiencing right now. An activity about goal-setting won't help someone struggling with test anxiety, just as a revision technique won't help someone who needs organizational support. If no provided activities in the RAG are a good fit for the immediate conversational topic, DO NOT suggest them. It's better to follow the general instructions in your main system prompt about how to handle this situation (e.g., continue the conversation or state you don't have a specific activity for that precise point but can discuss the underlying principles or explore other areas)."""
             
             messages_for_llm.append({"role": "system", "content": f"ADDITIONAL CONTEXT FOR YOUR RESPONSE:\n{system_rag_content}\n{activity_guidance}"}) # Clearly label RAG for the LLM
             app.logger.info(f"Student chat: Added RAG context to LLM prompt. Length: {len(system_rag_content)}")
