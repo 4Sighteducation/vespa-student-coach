@@ -1581,7 +1581,7 @@ def chat_turn():
             query_lower = current_user_message.lower()
             app.logger.info(f"Attempting to infer VESPA element. Query_lower: '{query_lower}'")
             keyword_to_element_map = {
-                ("vision", "goal", "future", "career", "motivation", "purpose", "direction", "aspiration", "dream", "ambition"): "Vision",
+                ("vision", "goal", "future", "career", "motivation", "purpose", "direction", "aspiration", "dream", "ambition", "achieve", "aims", "objectives"): "Vision",
                 ("effort", "hard work", "procrastination", "trying", "persevere", "lazy", "energy", "work ethic", "dedication", "commitment"): "Effort",
                 ("systems", "organization", "plan", "notes", "timetable", "deadline", "homework", "complete", "time management", "schedule", "diary", "planner", "organised", "organize", "structure", "routine"): "Systems", # "notes" is a keyword here
                 ("practice", "revision", "revise", "exam prep", "test myself", "study", "memory", "technique", "method", "preparation", "learning", "highlighting", "note-taking", "flashcards", "past papers", "past paper", "exam paper", "mock exam", "question practice", "testing"): "Practice",
@@ -1589,12 +1589,16 @@ def chat_turn():
             }
             element_found = False
             for keywords_tuple, element_name in keyword_to_element_map.items():
-                app.logger.debug(f"Checking element: {element_name} with keywords: {keywords_tuple}")
-                if any(kw in query_lower for kw in keywords_tuple):
-                    inferred_vespa_element_from_query = element_name
-                    app.logger.info(f"SUCCESS: Inferred VESPA element '{inferred_vespa_element_from_query}' from user query using keyword: {[kw for kw in keywords_tuple if kw in query_lower][0]}.")
-                    element_found = True
-                    break
+                # app.logger.debug(f"Checking element: {element_name} with keywords: {keywords_tuple}") # Original debug
+                for kw in keywords_tuple:
+                    app.logger.debug(f"Checking keyword '{kw}' from element '{element_name}' against query_lower: '{query_lower[:100]}...'") # Log each keyword check
+                    if kw in query_lower:
+                        inferred_vespa_element_from_query = element_name
+                        app.logger.info(f"SUCCESS: Inferred VESPA element '{inferred_vespa_element_from_query}' from user query using keyword: '{kw}'.")
+                        element_found = True
+                        break # Break from inner loop (keywords_tuple)
+                if element_found:
+                    break # Break from outer loop (keyword_to_element_map)
             if not element_found:
                 app.logger.info(f"FAILED: Could not infer VESPA element from query: '{query_lower}'")
         
